@@ -429,36 +429,130 @@ textarea {
   place-items: center;
   padding: 24px;
   background:
-    linear-gradient(135deg, rgba(31, 95, 191, 0.08), transparent 34%),
+    linear-gradient(135deg, rgba(31, 95, 191, 0.12), transparent 34%),
+    linear-gradient(315deg, rgba(4, 120, 87, 0.1), transparent 32%),
     var(--color-bg);
 }
 
 .login-panel {
   display: grid;
-  width: min(860px, 100%);
-  grid-template-columns: 1fr 380px;
-  gap: 18px;
+  width: min(1060px, 100%);
+  grid-template-columns: minmax(0, 1.16fr) 420px;
+  gap: 22px;
   align-items: stretch;
 }
 
 .login-copy {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  min-height: 360px;
-  padding: 36px;
+  justify-content: space-between;
+  min-height: 520px;
+  padding: 40px;
   border-radius: 8px;
   color: #fff;
-  background: #162238;
+  background:
+    linear-gradient(135deg, rgba(43, 111, 214, 0.18), transparent 42%),
+    #162238;
+  box-shadow: 0 22px 60px rgba(18, 31, 54, 0.22);
+}
+
+.auth-kicker {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 28px;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  color: #bfd2f4;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .login-copy strong {
-  font-size: 28px;
+  display: block;
+  max-width: 520px;
+  margin-top: 28px;
+  font-size: 36px;
+  line-height: 1.18;
 }
 
-.login-copy span {
-  margin-top: 16px;
+.login-copy p {
+  max-width: 520px;
+  margin: 16px 0 0;
   color: #cbd5e1;
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.auth-flow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: auto;
+}
+
+.auth-flow span,
+.auth-roles span,
+.auth-note {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.auth-flow span {
+  min-height: 70px;
+  padding: 14px 10px;
+  color: #eef5ff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.auth-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.auth-roles span {
+  min-height: 30px;
+  padding: 5px 10px;
+  color: #cbd5e1;
+  font-size: 12px;
+}
+
+.auth-note {
+  margin-top: 22px;
+  padding: 16px;
+  color: #d7e2f2;
+  line-height: 1.7;
+}
+
+.auth-card {
+  width: 100%;
+  min-height: 520px;
+  align-content: center;
+  padding: 34px;
+}
+
+.auth-card-header {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.auth-card-header span {
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.auth-card-header p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 13px;
 }
 
 .workflow-line {
@@ -618,6 +712,11 @@ textarea {
   .login-copy {
     min-height: auto;
     padding: 28px;
+  }
+
+  .auth-flow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 28px;
   }
 
   .form-card {
