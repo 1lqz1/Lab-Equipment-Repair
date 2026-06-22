@@ -4,12 +4,12 @@
 
 运行前要求：
 1. MySQL 已执行 docs/alter_user_registration_profile.sql。
-2. 后端已启动，默认地址 http://127.0.0.1:8080/api。
+2. 后端已启动，默认地址 http://127.0.0.1:18080/api。
 3. DataInitializer 已创建 admin / 123456。
 
 示例：
 python tests/api_smoke_test.py
-python tests/api_smoke_test.py --base-url http://localhost:8080/api --admin admin --password 123456
+python tests/api_smoke_test.py --base-url http://localhost:18080/api --admin admin --password 123456
 """
 
 from __future__ import annotations
@@ -283,7 +283,7 @@ class TestRunner:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="实验室设备报修管理系统接口冒烟测试")
-    parser.add_argument("--base-url", default="http://127.0.0.1:8080/api", help="后端 API 基础地址")
+    parser.add_argument("--base-url", default="http://127.0.0.1:18080/api", help="后端 API 基础地址")
     parser.add_argument("--admin", default="admin", help="管理员账号")
     parser.add_argument("--password", default="123456", help="管理员密码")
     return parser.parse_args()

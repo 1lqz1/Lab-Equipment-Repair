@@ -20,7 +20,7 @@ const avatarUrl = computed(() => {
   if (!path) {
     return ''
   }
-  return path.startsWith('http') ? path : `http://localhost:8080${path}`
+  return path.startsWith('http') ? path : `http://localhost:18080${path}`
 })
 
 async function loadProfile() {
