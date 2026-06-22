@@ -1,0 +1,280 @@
+#!/usr/bin/env python3
+"""
+实验室设备报修管理系统接口冒烟测试。
+
+运行前要求：
+1. MySQL 已执行 docs/alter_user_registration_profile.sql。
+2. 后端已启动，默认地址 http://127.0.0.1:8080/api。
+3. DataInitializer 已创建 admin / 123456。
+
+示例：
+python tests/api_smoke_test.py
+python tests/api_smoke_test.py --base-url http://localhost:8080/api --admin admin --password 123456
+"""
+
+from __future__ import annotations
+
+import argparse
+import base64
+import json
+import random
+import sys
+import time
+import urllib.error
+import urllib.request
+from dataclasses import dataclass
+from typing import Any
+
+
+PNG_1X1 = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII="
+)
+
+
+@dataclass
+class ApiResult:
+    status: int
+    body: dict[str, Any] | str
+
+
+class ApiClient:
+    def __init__(self, base_url: str) -> None:
+        self.base_url = base_url.rstrip("/")
+        self.token: str | None = None
+
+    def set_token(self, token: str | None) -> None:
+        self.token = token
+
+    def get(self, path: str) -> ApiResult:
+        return self._request("GET", path)
+
+    def post_json(self, path: str, payload: dict[str, Any]) -> ApiResult:
+        return self._request("POST", path, payload)
+
+    def put_json(self, path: str, payload: dict[str, Any] | None = None) -> ApiResult:
+        return self._request("PUT", path, payload)
+
+    def post_multipart_file(self, path: str, field_name: str, filename: str, content_type: str, data: bytes) -> ApiResult:
+        boundary = f"----LabRepairBoundary{int(time.time() * 1000)}"
+        body = (
+            f"--{boundary}\r\n"
+            f'Content-Disposition: form-data; name="{field_name}"; filename="{filename}"\r\n'
+            f"Content-Type: {content_type}\r\n\r\n"
+        ).encode("utf-8") + data + f"\r\n--{boundary}--\r\n".encode("utf-8")
+        return self._request(
+            "POST",
+            path,
+            raw_body=body,
+            content_type=f"multipart/form-data; boundary={boundary}",
+        )
+
+    def _request(
+        self,
+        method: str,
+        path: str,
+        payload: dict[str, Any] | None = None,
+        raw_body: bytes | None = None,
+        content_type: str = "application/json",
+    ) -> ApiResult:
+        url = f"{self.base_url}{path}"
+        headers = {"Accept": "application/json"}
+        data = raw_body
+        if payload is not None:
+            data = json.dumps(payload).encode("utf-8")
+            headers["Content-Type"] = content_type
+        elif raw_body is not None:
+            headers["Content-Type"] = content_type
+        if self.token:
+            headers["Authorization"] = f"Bearer {self.token}"
+
+        request = urllib.request.Request(url, data=data, headers=headers, method=method)
+        try:
+            with urllib.request.urlopen(request, timeout=10) as response:
+                return ApiResult(response.status, self._decode_body(response.read()))
+        except urllib.error.HTTPError as error:
+            return ApiResult(error.code, self._decode_body(error.read()))
+        except urllib.error.URLError as error:
+            raise RuntimeError(f"无法连接后端服务：{url}，原因：{error.reason}") from error
+
+    @staticmethod
+    def _decode_body(raw: bytes) -> dict[str, Any] | str:
+        text = raw.decode("utf-8", errors="replace")
+        if not text:
+            return {}
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            return text
+
+
+class TestRunner:
+    def __init__(self, client: ApiClient, admin: str, password: str) -> None:
+        self.client = client
+        self.admin = admin
+        self.password = password
+        self.failures: list[str] = []
+        suffix = f"{int(time.time())}_{random.randint(1000, 9999)}"
+        self.pending_user = f"pending_{suffix}"
+        self.created_user = f"created_{suffix}"
+
+    def run(self) -> int:
+        tests = [
+            self.test_admin_login_success,
+            self.test_login_wrong_password,
+            self.test_public_register_pending_user,
+            self.test_pending_user_cannot_login,
+            self.test_admin_create_user,
+            self.test_admin_user_status_actions,
+            self.test_profile_update,
+            self.test_avatar_upload,
+        ]
+        for test in tests:
+            name = test.__name__.replace("test_", "")
+            try:
+                test()
+                print(f"[PASS] {name}")
+            except AssertionError as error:
+                self.failures.append(f"{name}: {error}")
+                print(f"[FAIL] {name}: {error}")
+            except RuntimeError as error:
+                self.failures.append(f"{name}: {error}")
+                print(f"[ERROR] {name}: {error}")
+
+        if self.failures:
+            print("\n失败项：")
+            for failure in self.failures:
+                print(f"- {failure}")
+            return 1
+        print("\n全部接口冒烟测试通过")
+        return 0
+
+    def test_admin_login_success(self) -> None:
+        result = self.client.post_json("/auth/login", {"username": self.admin, "password": self.password})
+        self.assert_api_success(result, "管理员登录失败")
+        token = result.body["data"]["token"]  # type: ignore[index]
+        assert token, "登录响应缺少 token"
+        self.client.set_token(token)
+
+    def test_login_wrong_password(self) -> None:
+        result = self.client.post_json("/auth/login", {"username": self.admin, "password": "wrong-password"})
+        self.assert_api_fail(result, expected_status=401, expected_code=401, expected_message="账号或密码错误")
+
+    def test_public_register_pending_user(self) -> None:
+        self.client.set_token(None)
+        result = self.client.post_json(
+            "/auth/register",
+            {
+                "username": self.pending_user,
+                "password": "123456",
+                "realName": "待审核测试用户",
+                "phone": "13800000000",
+            },
+        )
+        self.assert_api_success(result, "公开注册失败")
+        data = result.body["data"]  # type: ignore[index]
+        assert data["role"] == "REPORTER", f"普通注册角色应为 REPORTER，实际为 {data['role']}"
+        assert data["status"] == "PENDING", f"普通注册状态应为 PENDING，实际为 {data['status']}"
+
+    def test_pending_user_cannot_login(self) -> None:
+        result = self.client.post_json("/auth/login", {"username": self.pending_user, "password": "123456"})
+        self.assert_api_fail(result, expected_status=403, expected_code=403, expected_message="账号待管理员审核")
+
+    def test_admin_create_user(self) -> None:
+        self.login_admin()
+        result = self.client.post_json(
+            "/users",
+            {
+                "username": self.created_user,
+                "password": "123456",
+                "realName": "管理员创建测试用户",
+                "phone": "13900000000",
+                "role": "REPAIRER",
+            },
+        )
+        self.assert_api_success(result, "管理员创建用户失败")
+        data = result.body["data"]  # type: ignore[index]
+        assert data["role"] == "REPAIRER", f"创建用户角色应为 REPAIRER，实际为 {data['role']}"
+        assert data["status"] == "ACTIVE", f"管理员创建用户状态应为 ACTIVE，实际为 {data['status']}"
+
+    def test_admin_user_status_actions(self) -> None:
+        self.login_admin()
+        pending_id = self.find_user_id(self.pending_user)
+        self.assert_api_success(self.client.put_json(f"/users/{pending_id}/approve"), "审批用户失败")
+        self.login_as(self.pending_user, "123456")
+
+        self.login_admin()
+        created_id = self.find_user_id(self.created_user)
+        self.assert_api_success(self.client.put_json(f"/users/{created_id}/disable"), "禁用用户失败")
+        result = self.client.post_json("/auth/login", {"username": self.created_user, "password": "123456"})
+        self.assert_api_fail(result, expected_status=403, expected_code=403, expected_message="账号已被禁用")
+
+        self.login_admin()
+        self.assert_api_success(self.client.put_json(f"/users/{created_id}/enable"), "启用用户失败")
+        self.login_as(self.created_user, "123456")
+
+    def test_profile_update(self) -> None:
+        self.login_as(self.created_user, "123456")
+        result = self.client.put_json("/profile", {"realName": "资料修改测试", "phone": "13700000000"})
+        self.assert_api_success(result, "修改个人资料失败")
+        data = result.body["data"]  # type: ignore[index]
+        assert data["realName"] == "资料修改测试", "个人资料 realName 未更新"
+        assert data["phone"] == "13700000000", "个人资料 phone 未更新"
+
+    def test_avatar_upload(self) -> None:
+        self.login_as(self.created_user, "123456")
+        result = self.client.post_multipart_file("/profile/avatar", "file", "avatar.png", "image/png", PNG_1X1)
+        self.assert_api_success(result, "头像上传失败")
+        data = result.body["data"]  # type: ignore[index]
+        avatar_path = data.get("avatarPath")
+        assert avatar_path and avatar_path.startswith("/uploads/avatars/"), f"头像路径异常：{avatar_path}"
+
+    def login_admin(self) -> None:
+        self.login_as(self.admin, self.password)
+
+    def login_as(self, username: str, password: str) -> None:
+        self.client.set_token(None)
+        result = self.client.post_json("/auth/login", {"username": username, "password": password})
+        self.assert_api_success(result, f"{username} 登录失败")
+        self.client.set_token(result.body["data"]["token"])  # type: ignore[index]
+
+    def find_user_id(self, username: str) -> int:
+        result = self.client.get("/users")
+        self.assert_api_success(result, "查询用户列表失败")
+        for user in result.body["data"]:  # type: ignore[index]
+            if user["username"] == username:
+                return int(user["id"])
+        raise AssertionError(f"用户列表中找不到账号 {username}")
+
+    @staticmethod
+    def assert_api_success(result: ApiResult, message: str) -> None:
+        assert result.status == 200, f"{message}，HTTP {result.status}，响应 {result.body}"
+        assert isinstance(result.body, dict), f"{message}，响应不是 JSON：{result.body}"
+        assert result.body.get("code") == 200, f"{message}，业务 code={result.body.get('code')}，响应 {result.body}"
+
+    @staticmethod
+    def assert_api_fail(result: ApiResult, expected_status: int, expected_code: int, expected_message: str) -> None:
+        assert result.status == expected_status, f"HTTP 状态应为 {expected_status}，实际 {result.status}，响应 {result.body}"
+        assert isinstance(result.body, dict), f"失败响应不是 JSON：{result.body}"
+        assert result.body.get("code") == expected_code, f"业务 code 应为 {expected_code}，实际 {result.body.get('code')}"
+        assert expected_message in str(result.body.get("message")), (
+            f"错误消息应包含 {expected_message}，实际 {result.body.get('message')}"
+        )
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="实验室设备报修管理系统接口冒烟测试")
+    parser.add_argument("--base-url", default="http://127.0.0.1:8080/api", help="后端 API 基础地址")
+    parser.add_argument("--admin", default="admin", help="管理员账号")
+    parser.add_argument("--password", default="123456", help="管理员密码")
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    client = ApiClient(args.base_url)
+    runner = TestRunner(client, args.admin, args.password)
+    return runner.run()
+
+
+if __name__ == "__main__":
+    sys.exit(main())
