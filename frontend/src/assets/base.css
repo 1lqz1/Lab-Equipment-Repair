@@ -1,19 +1,24 @@
 :root {
-  --color-bg: #f3f6fb;
+  --color-bg: #eef4fb;
   --color-panel: #ffffff;
-  --color-panel-subtle: #f8fafc;
-  --color-border: #dbe3ee;
-  --color-border-strong: #c8d3e1;
-  --color-text: #182230;
-  --color-muted: #64748b;
-  --color-primary: #1f5fbf;
-  --color-primary-dark: #174c9f;
-  --color-primary-soft: #e8f1ff;
-  --color-danger: #c62828;
+  --color-panel-subtle: #f5f8fc;
+  --color-border: #d7e0eb;
+  --color-border-strong: #b8c6d8;
+  --color-text: #142033;
+  --color-muted: #65758b;
+  --color-primary: #1f6ed4;
+  --color-primary-dark: #1556a8;
+  --color-primary-soft: #e6f0ff;
+  --color-accent: #0f9f8f;
+  --color-accent-soft: #dff8f4;
+  --color-warning: #b7791f;
+  --color-warning-soft: #fff3d6;
+  --color-danger: #c24141;
   --color-danger-soft: #fee2e2;
   --color-success: #047857;
   --color-success-soft: #dff7ea;
-  --shadow-panel: 0 12px 28px rgba(24, 34, 48, 0.07);
+  --shadow-panel: 0 16px 42px rgba(20, 32, 51, 0.08);
+  --shadow-lift: 0 24px 70px rgba(20, 32, 51, 0.14);
 }
 
 * {
@@ -30,7 +35,10 @@ body,
 
 body {
   color: var(--color-text);
-  background: var(--color-bg);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(31, 110, 212, 0.13), transparent 28%),
+    radial-gradient(circle at 86% 12%, rgba(15, 159, 143, 0.12), transparent 26%),
+    var(--color-bg);
   font-family:
     "Microsoft YaHei",
     "PingFang SC",

@@ -10,14 +10,14 @@ const authStore = useAuthStore()
 const menus = computed(() => {
   const role = authStore.role
   const items = [
-    { path: '/dashboard', label: '工作台', roles: ['ADMIN', 'LAB_MANAGER', 'REPAIRER', 'REPORTER'] },
-    { path: '/orders', label: '工单列表', roles: ['ADMIN', 'LAB_MANAGER', 'REPAIRER', 'REPORTER'] },
-    { path: '/orders/new', label: '提交报修', roles: ['ADMIN', 'REPORTER'] },
-    { path: '/repair/tasks', label: '维修任务', roles: ['ADMIN', 'REPAIRER'] },
-    { path: '/equipment', label: '设备管理', roles: ['ADMIN', 'LAB_MANAGER', 'REPORTER'] },
-    { path: '/labs', label: '实验室管理', roles: ['ADMIN', 'LAB_MANAGER'] },
-    { path: '/users', label: '用户管理', roles: ['ADMIN'] },
-    { path: '/profile', label: '个人资料', roles: ['ADMIN', 'LAB_MANAGER', 'REPAIRER', 'REPORTER'] },
+    { path: '/dashboard', label: '工作台', icon: '台', roles: ['ADMIN', 'LAB_MANAGER', 'REPAIRER', 'REPORTER'] },
+    { path: '/orders', label: '工单列表', icon: '单', roles: ['ADMIN', 'LAB_MANAGER', 'REPAIRER', 'REPORTER'] },
+    { path: '/orders/new', label: '提交报修', icon: '报', roles: ['ADMIN', 'REPORTER'] },
+    { path: '/repair/tasks', label: '维修任务', icon: '修', roles: ['ADMIN', 'REPAIRER'] },
+    { path: '/equipment', label: '设备管理', icon: '设', roles: ['ADMIN', 'LAB_MANAGER', 'REPORTER'] },
+    { path: '/labs', label: '实验室管理', icon: '室', roles: ['ADMIN', 'LAB_MANAGER'] },
+    { path: '/users', label: '用户管理', icon: '员', roles: ['ADMIN'] },
+    { path: '/profile', label: '个人资料', icon: '我', roles: ['ADMIN', 'LAB_MANAGER', 'REPAIRER', 'REPORTER'] },
   ]
   return items.filter((item) => item.roles.includes(role))
 })
@@ -41,9 +41,15 @@ function logout() {
 
       <nav class="menu">
         <RouterLink v-for="item in menus" :key="item.path" :to="item.path">
+          <span>{{ item.icon }}</span>
           {{ item.label }}
         </RouterLink>
       </nav>
+
+      <div class="sidebar-status">
+        <span>当前身份</span>
+        <strong>{{ authStore.role || '未登录' }}</strong>
+      </div>
     </aside>
 
     <section class="main-area">

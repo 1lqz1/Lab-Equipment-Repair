@@ -24,11 +24,23 @@ onMounted(loadStats)
 <template>
   <PageHeader title="工作台" description="查看当前报修流程和常用入口" />
 
+  <section class="dashboard-hero">
+    <div>
+      <span>今日工作概览</span>
+      <h2>从报修提交到验收归档，集中掌握设备维修进度</h2>
+      <p>优先处理待审核与维修中工单，减少设备停用时间，保障实验室教学与科研使用。</p>
+    </div>
+    <div class="hero-metric">
+      <span>设备总数</span>
+      <strong>{{ stats.equipmentCount }}</strong>
+    </div>
+  </section>
+
   <section class="card-grid">
-    <DataCard label="待审核工单" :value="stats.submittedCount" />
-    <DataCard label="维修中工单" :value="stats.inProgressCount" />
-    <DataCard label="待验收工单" :value="stats.repairedCount" />
-    <DataCard label="已归档工单" :value="stats.closedCount" />
+    <DataCard label="待审核工单" :value="stats.submittedCount" tone="blue" />
+    <DataCard label="维修中工单" :value="stats.inProgressCount" tone="amber" />
+    <DataCard label="待验收工单" :value="stats.repairedCount" tone="teal" />
+    <DataCard label="已归档工单" :value="stats.closedCount" tone="green" />
   </section>
 
   <section class="panel">
