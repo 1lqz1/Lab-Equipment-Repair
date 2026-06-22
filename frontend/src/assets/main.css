@@ -498,8 +498,95 @@ textarea {
   gap: 10px;
 }
 
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .danger-link {
   color: var(--color-danger);
+}
+
+.primary-button:disabled,
+.ghost-button:disabled,
+.link-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+  transform: none;
+}
+
+.table-message {
+  margin-bottom: 14px;
+}
+
+.table-state {
+  display: grid;
+  min-height: 84px;
+  place-items: center;
+  color: var(--color-muted);
+}
+
+.admin-overview,
+.repair-notice {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.admin-overview {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.admin-overview div,
+.repair-notice {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #fff, var(--color-panel-subtle));
+  box-shadow: var(--shadow-panel);
+}
+
+.admin-overview div {
+  position: relative;
+  overflow: hidden;
+  min-height: 104px;
+  padding: 18px;
+}
+
+.admin-overview div::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-primary), #0f9f8f);
+  content: '';
+}
+
+.admin-overview span,
+.repair-notice span {
+  display: block;
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
+.admin-overview strong,
+.repair-notice strong {
+  display: block;
+  margin-top: 12px;
+  color: var(--color-text);
+  font-size: 32px;
+  line-height: 1;
+}
+
+.repair-notice {
+  grid-template-columns: 160px minmax(0, 1fr) auto;
+  align-items: center;
+  padding: 18px;
+}
+
+.repair-notice p {
+  margin: 0;
+  color: var(--color-muted);
+  line-height: 1.7;
 }
 
 .login-page {
@@ -868,8 +955,22 @@ textarea {
     flex-direction: column;
   }
 
+  .toolbar-actions,
+  .repair-notice {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .toolbar-actions {
+    flex-direction: column;
+  }
+
   .table-toolbar select {
     width: 100%;
+  }
+
+  .admin-overview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -890,5 +991,9 @@ textarea {
 
   .form-card {
     width: 100%;
+  }
+
+  .admin-overview {
+    grid-template-columns: 1fr;
   }
 }

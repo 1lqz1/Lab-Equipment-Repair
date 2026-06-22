@@ -10,12 +10,16 @@ import org.example.lab_equipment_repair.entity.User;
 import org.example.lab_equipment_repair.enums.UserRole;
 import org.example.lab_equipment_repair.enums.UserStatus;
 import org.example.lab_equipment_repair.mapper.UserMapper;
+import org.example.lab_equipment_repair.security.LoginUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -88,6 +92,7 @@ public class UserService {
     }
 
     public UserResponse disable(Long id) {
+        ensureCanDisable(id);
         return updateStatus(id, UserStatus.DISABLED);
     }
 
@@ -111,6 +116,33 @@ public class UserService {
             throw new BusinessException("用户不存在");
         }
         return user;
+    }
+
+    private void ensureCanDisable(Long id) {
+        LoginUser currentUser = currentLoginUser();
+        if (currentUser != null && Objects.equals(currentUser.getId(), id)) {
+            log.warn("阻止禁用当前登录账号：userId={}, username={}", currentUser.getId(), currentUser.getUsername());
+            throw new BusinessException("不能禁用当前登录账号");
+        }
+        User targetUser = getById(id);
+        if (!UserRole.ADMIN.name().equals(targetUser.getRole())) {
+            return;
+        }
+        Long activeAdminCount = userMapper.selectCount(new LambdaQueryWrapper<User>()
+                .eq(User::getRole, UserRole.ADMIN.name())
+                .eq(User::getStatus, UserStatus.ACTIVE.name()));
+        if (activeAdminCount <= 1 && UserStatus.ACTIVE.name().equals(targetUser.getStatus())) {
+            log.warn("阻止禁用最后一个启用的管理员：userId={}, username={}", targetUser.getId(), targetUser.getUsername());
+            throw new BusinessException("不能禁用最后一个启用的管理员");
+        }
+    }
+
+    private LoginUser currentLoginUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof LoginUser loginUser)) {
+            return null;
+        }
+        return loginUser;
     }
 
     private void ensureUsernameAvailable(String username) {
