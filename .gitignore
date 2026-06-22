@@ -1,6 +1,7 @@
 .idea/
 backend/uploads/
 backend/logs/
+logs/
 backend/target/
 frontend/dist/
 frontend/node_modules/
