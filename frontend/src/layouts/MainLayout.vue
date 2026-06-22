@@ -16,7 +16,8 @@ const menus = computed(() => {
     { path: '/repair/tasks', label: '维修任务', roles: ['ADMIN', 'REPAIRER'] },
     { path: '/equipment', label: '设备管理', roles: ['ADMIN', 'LAB_MANAGER', 'REPORTER'] },
     { path: '/labs', label: '实验室管理', roles: ['ADMIN', 'LAB_MANAGER'] },
-    { path: '/users', label: '用户管理', roles: ['ADMIN', 'LAB_MANAGER'] },
+    { path: '/users', label: '用户管理', roles: ['ADMIN'] },
+    { path: '/profile', label: '个人资料', roles: ['ADMIN', 'LAB_MANAGER', 'REPAIRER', 'REPORTER'] },
   ]
   return items.filter((item) => item.roles.includes(role))
 })

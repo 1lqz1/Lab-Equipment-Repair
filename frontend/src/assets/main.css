@@ -182,7 +182,8 @@
 
 .status-tag[data-status='CLOSED'],
 .status-tag[data-status='NORMAL'],
-.status-tag[data-status='ACCEPTED'] {
+.status-tag[data-status='ACCEPTED'],
+.status-tag[data-status='ACTIVE'] {
   color: #047857;
   background: #d1fae5;
 }
@@ -197,7 +198,8 @@
 
 .status-tag[data-status='IN_PROGRESS'],
 .status-tag[data-status='REPAIRING'],
-.status-tag[data-status='REPAIRED'] {
+.status-tag[data-status='REPAIRED'],
+.status-tag[data-status='PENDING'] {
   color: #b45309;
   background: #fef3c7;
 }
@@ -293,6 +295,44 @@ textarea {
   color: var(--color-danger);
 }
 
+.form-success {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #047857;
+}
+
+.form-link {
+  color: var(--color-primary);
+  font-size: 14px;
+  text-align: center;
+}
+
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.table-toolbar h2 {
+  margin: 0;
+}
+
+.table-toolbar select {
+  width: 160px;
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.danger-link {
+  color: var(--color-danger);
+}
+
 .login-page {
   display: grid;
   min-height: 100vh;
@@ -367,9 +407,62 @@ textarea {
   color: var(--color-muted);
 }
 
+.profile-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 24px;
+}
+
+.avatar-block {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.avatar-preview {
+  display: grid;
+  width: 160px;
+  height: 160px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #f8fafc;
+  color: var(--color-primary);
+  font-size: 48px;
+  font-weight: 700;
+}
+
+.avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.upload-button {
+  display: inline-flex;
+  width: 160px;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--color-text);
+  background: #edf2f7;
+  cursor: pointer;
+}
+
+.upload-button input {
+  display: none;
+}
+
+.profile-form {
+  align-content: start;
+}
+
 @media (max-width: 900px) {
   .app-shell,
-  .login-panel {
+  .login-panel,
+  .profile-layout {
     grid-template-columns: 1fr;
   }
 

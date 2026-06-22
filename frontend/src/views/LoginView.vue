@@ -49,6 +49,7 @@ async function submit() {
         <button class="primary-button" type="submit" :disabled="loading">
           {{ loading ? '登录中...' : '登录系统' }}
         </button>
+        <RouterLink class="form-link" to="/register">没有账号，申请注册</RouterLink>
       </form>
     </section>
   </main>

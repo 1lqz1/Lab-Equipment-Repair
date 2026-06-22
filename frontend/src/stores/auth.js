@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 
-import { currentUserApi, loginApi } from '@/api/auth'
+import { currentUserApi, loginApi, registerApi } from '@/api/auth'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -19,9 +19,16 @@ export const useAuthStore = defineStore('auth', {
       localStorage.setItem('token', this.token)
       localStorage.setItem('user', JSON.stringify(this.user))
     },
+    async register(payload) {
+      return registerApi(payload)
+    },
     async fetchCurrentUser() {
       const response = await currentUserApi()
       this.user = response.data
+      localStorage.setItem('user', JSON.stringify(this.user))
+    },
+    setUser(user) {
+      this.user = user
       localStorage.setItem('user', JSON.stringify(this.user))
     },
     logout() {
