@@ -1,1 +1,5 @@
 .idea/
+backend/uploads/
+backend/target/
+frontend/dist/
+frontend/node_modules/

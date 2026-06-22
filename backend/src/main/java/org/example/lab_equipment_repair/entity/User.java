@@ -23,6 +23,8 @@ public class User {
 
     private String status;
 
+    private String avatarPath;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
