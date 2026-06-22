@@ -136,7 +136,10 @@ onMounted(loadUsers)
 
   <section class="panel">
     <div class="table-toolbar">
-      <h2>用户列表</h2>
+      <div>
+        <h2>用户列表</h2>
+        <p>按状态筛选注册申请和系统账号</p>
+      </div>
       <select v-model="filterStatus">
         <option value="">全部状态</option>
         <option value="PENDING">待审核</option>
@@ -146,72 +149,74 @@ onMounted(loadUsers)
       </select>
     </div>
 
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>账号</th>
-          <th>姓名</th>
-          <th>联系电话</th>
-          <th>角色</th>
-          <th>状态</th>
-          <th>创建时间</th>
-          <th>操作</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-if="loading">
-          <td colspan="7">加载中...</td>
-        </tr>
-        <tr v-for="user in filteredUsers" :key="user.id">
-          <td>{{ user.username }}</td>
-          <td>{{ user.realName }}</td>
-          <td>{{ user.phone || '-' }}</td>
-          <td>{{ roleText(user.role) }}</td>
-          <td>
-            <span class="status-tag" :data-status="user.status">{{ statusText(user.status) }}</span>
-          </td>
-          <td>{{ user.createdAt || '-' }}</td>
-          <td>
-            <div class="row-actions">
-              <button
-                v-if="user.status === 'PENDING'"
-                class="link-button"
-                type="button"
-                @click="runAction(approveUser, user, '用户已通过审核')"
-              >
-                通过
-              </button>
-              <button
-                v-if="user.status === 'PENDING'"
-                class="link-button danger-link"
-                type="button"
-                @click="runAction(rejectUser, user, '用户已拒绝')"
-              >
-                拒绝
-              </button>
-              <button
-                v-if="user.status === 'ACTIVE'"
-                class="link-button danger-link"
-                type="button"
-                @click="runAction(disableUser, user, '用户已禁用')"
-              >
-                禁用
-              </button>
-              <button
-                v-if="user.status === 'DISABLED' || user.status === 'REJECTED'"
-                class="link-button"
-                type="button"
-                @click="runAction(enableUser, user, '用户已启用')"
-              >
-                启用
-              </button>
-            </div>
-          </td>
-        </tr>
-        <tr v-if="!loading && filteredUsers.length === 0">
-          <td colspan="7">暂无用户</td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>账号</th>
+            <th>姓名</th>
+            <th>联系电话</th>
+            <th>角色</th>
+            <th>状态</th>
+            <th>创建时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-if="loading">
+            <td colspan="7">加载中...</td>
+          </tr>
+          <tr v-for="user in filteredUsers" :key="user.id">
+            <td>{{ user.username }}</td>
+            <td>{{ user.realName }}</td>
+            <td>{{ user.phone || '-' }}</td>
+            <td>{{ roleText(user.role) }}</td>
+            <td>
+              <span class="status-tag" :data-status="user.status">{{ statusText(user.status) }}</span>
+            </td>
+            <td>{{ user.createdAt || '-' }}</td>
+            <td>
+              <div class="row-actions">
+                <button
+                  v-if="user.status === 'PENDING'"
+                  class="link-button"
+                  type="button"
+                  @click="runAction(approveUser, user, '用户已通过审核')"
+                >
+                  通过
+                </button>
+                <button
+                  v-if="user.status === 'PENDING'"
+                  class="link-button danger-link"
+                  type="button"
+                  @click="runAction(rejectUser, user, '用户已拒绝')"
+                >
+                  拒绝
+                </button>
+                <button
+                  v-if="user.status === 'ACTIVE'"
+                  class="link-button danger-link"
+                  type="button"
+                  @click="runAction(disableUser, user, '用户已禁用')"
+                >
+                  禁用
+                </button>
+                <button
+                  v-if="user.status === 'DISABLED' || user.status === 'REJECTED'"
+                  class="link-button"
+                  type="button"
+                  @click="runAction(enableUser, user, '用户已启用')"
+                >
+                  启用
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr v-if="!loading && filteredUsers.length === 0">
+            <td colspan="7">暂无用户</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </section>
 </template>

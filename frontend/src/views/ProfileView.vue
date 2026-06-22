@@ -77,6 +77,7 @@ onMounted(loadProfile)
         <img v-if="avatarUrl" :src="avatarUrl" alt="用户头像" />
         <span v-else>{{ authStore.user?.realName?.[0] || authStore.user?.username?.[0] || 'U' }}</span>
       </div>
+      <p>支持 PNG、JPG、WEBP，头像文件保存到后端上传目录。</p>
       <label class="upload-button">
         {{ uploading ? '上传中...' : '上传头像' }}
         <input type="file" accept="image/png,image/jpeg,image/webp" :disabled="uploading" @change="onAvatarChange" />
