@@ -11,6 +11,8 @@ import org.example.lab_equipment_repair.enums.UserStatus;
 import org.example.lab_equipment_repair.mapper.UserMapper;
 import org.example.lab_equipment_repair.security.JwtTokenProvider;
 import org.example.lab_equipment_repair.security.LoginUser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,6 +25,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthService {
 
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+
     private final AuthenticationManager authenticationManager;
 
     private final JwtTokenProvider jwtTokenProvider;
@@ -30,11 +34,19 @@ public class AuthService {
     private final UserMapper userMapper;
 
     public LoginResponse login(LoginRequest request) {
+        String username = request.getUsername();
+        String password = request.getPassword();
+        log.info("登录尝试：username={}, passwordProvided={}, passwordLength={}",
+                username,
+                password != null && !password.isBlank(),
+                password == null ? 0 : password.length());
+
         User user = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getUsername, request.getUsername()));
         if (user == null) {
+            log.warn("登录失败：username={}, reason=USER_NOT_FOUND", username);
             throw new BusinessException(401, "账号或密码错误");
         }
-        validateLoginStatus(user.getStatus());
+        validateLoginStatus(user);
 
         Authentication authentication;
         try {
@@ -42,12 +54,21 @@ public class AuthService {
                     new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
             );
         } catch (BadCredentialsException exception) {
+            log.warn("登录失败：username={}, userId={}, role={}, reason=BAD_CREDENTIALS",
+                    username, user.getId(), user.getRole());
             throw new BusinessException(401, "账号或密码错误");
         } catch (AuthenticationException exception) {
+            log.warn("登录失败：username={}, userId={}, role={}, reason=AUTHENTICATION_EXCEPTION, exception={}",
+                    username, user.getId(), user.getRole(), exception.getClass().getSimpleName());
             throw new BusinessException(401, "账号或密码错误");
         }
         LoginUser loginUser = (LoginUser) authentication.getPrincipal();
         String token = jwtTokenProvider.createToken(loginUser);
+        log.info("登录成功：username={}, userId={}, role={}, status={}",
+                loginUser.getUsername(),
+                loginUser.getId(),
+                loginUser.getRole(),
+                loginUser.getUser().getStatus());
         return new LoginResponse(token, UserResponse.from(loginUser.getUser()));
     }
 
@@ -57,10 +78,13 @@ public class AuthService {
         return UserResponse.from(loginUser.getUser());
     }
 
-    private void validateLoginStatus(String status) {
+    private void validateLoginStatus(User user) {
+        String status = user.getStatus();
         if (UserStatus.ACTIVE.name().equals(status)) {
             return;
         }
+        log.warn("登录拒绝：username={}, userId={}, role={}, status={}",
+                user.getUsername(), user.getId(), user.getRole(), status);
         if (UserStatus.PENDING.name().equals(status)) {
             throw new BusinessException(403, "账号待管理员审核");
         }
