@@ -1,59 +1,26 @@
+import axios from 'axios'
+
 import { useAuthStore } from '@/stores/auth'
 
-const baseURL = 'http://localhost:8080/api'
+const request = axios.create({
+  baseURL: 'http://localhost:8080/api',
+  timeout: 10000,
+})
 
-async function send(url, options = {}) {
+request.interceptors.request.use((config) => {
   const authStore = useAuthStore()
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(options.headers || {}),
-  }
-
   if (authStore.token) {
-    headers.Authorization = `Bearer ${authStore.token}`
+    config.headers.Authorization = `Bearer ${authStore.token}`
   }
+  return config
+})
 
-  const response = await fetch(`${baseURL}${url}`, {
-    ...options,
-    headers,
-  })
-  const payload = await response.json().catch(() => null)
-
-  if (!response.ok || payload?.code >= 400) {
-    throw new Error(payload?.message || '请求失败')
-  }
-
-  return payload
-}
-
-function withParams(url, params) {
-  if (!params) {
-    return url
-  }
-  const search = new URLSearchParams()
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      search.append(key, value)
-    }
-  })
-  const query = search.toString()
-  return query ? `${url}?${query}` : url
-}
-
-export default {
-  get(url, config = {}) {
-    return send(withParams(url, config.params), { method: 'GET' })
+request.interceptors.response.use(
+  (response) => response.data,
+  (error) => {
+    const message = error.response?.data?.message || '请求失败'
+    return Promise.reject(new Error(message))
   },
-  post(url, data) {
-    return send(url, { method: 'POST', body: JSON.stringify(data) })
-  },
-  put(url, data) {
-    return send(url, {
-      method: 'PUT',
-      body: data === undefined ? undefined : JSON.stringify(data),
-    })
-  },
-  delete(url) {
-    return send(url, { method: 'DELETE' })
-  },
-}
+)
+
+export default request
