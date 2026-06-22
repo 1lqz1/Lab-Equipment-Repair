@@ -504,6 +504,19 @@ textarea {
   gap: 10px;
 }
 
+.equipment-filters {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.equipment-filters input {
+  width: 180px;
+}
+
+.equipment-filters select {
+  width: 150px;
+}
+
 .danger-link {
   color: var(--color-danger);
 }
@@ -963,6 +976,12 @@ textarea {
 
   .toolbar-actions {
     flex-direction: column;
+  }
+
+  .equipment-filters input,
+  .equipment-filters select,
+  .equipment-filters button {
+    width: 100%;
   }
 
   .table-toolbar select {
