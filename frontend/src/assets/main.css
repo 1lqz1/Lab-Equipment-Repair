@@ -678,6 +678,10 @@ textarea {
   border-bottom: 0;
 }
 
+.data-table tr.is-selected td {
+  background: rgba(214, 183, 111, 0.1);
+}
+
 .row-actions {
   display: flex;
   flex-wrap: wrap;
@@ -713,6 +717,12 @@ textarea {
 
 .table-message {
   margin-bottom: 14px;
+}
+
+.order-action-form {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border);
 }
 
 .table-state {

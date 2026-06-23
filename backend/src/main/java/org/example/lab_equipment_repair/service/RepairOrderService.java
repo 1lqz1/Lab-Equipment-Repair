@@ -9,19 +9,24 @@ import org.example.lab_equipment_repair.dto.FinishRepairRequest;
 import org.example.lab_equipment_repair.dto.RemarkRequest;
 import org.example.lab_equipment_repair.dto.RepairOrderQuery;
 import org.example.lab_equipment_repair.dto.SubmitOrderRequest;
+import org.example.lab_equipment_repair.dto.TransferOrderRequest;
 import org.example.lab_equipment_repair.entity.AcceptanceRecord;
 import org.example.lab_equipment_repair.entity.Equipment;
 import org.example.lab_equipment_repair.entity.MaintenanceRecord;
 import org.example.lab_equipment_repair.entity.OrderStatusLog;
 import org.example.lab_equipment_repair.entity.RepairOrder;
+import org.example.lab_equipment_repair.entity.User;
 import org.example.lab_equipment_repair.enums.EquipmentStatus;
 import org.example.lab_equipment_repair.enums.OrderStatus;
 import org.example.lab_equipment_repair.enums.UrgencyLevel;
+import org.example.lab_equipment_repair.enums.UserRole;
+import org.example.lab_equipment_repair.enums.UserStatus;
 import org.example.lab_equipment_repair.mapper.AcceptanceRecordMapper;
 import org.example.lab_equipment_repair.mapper.EquipmentMapper;
 import org.example.lab_equipment_repair.mapper.MaintenanceRecordMapper;
 import org.example.lab_equipment_repair.mapper.OrderStatusLogMapper;
 import org.example.lab_equipment_repair.mapper.RepairOrderMapper;
+import org.example.lab_equipment_repair.mapper.UserMapper;
 import org.example.lab_equipment_repair.security.LoginUser;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -42,6 +47,7 @@ public class RepairOrderService {
     private final MaintenanceRecordMapper maintenanceRecordMapper;
     private final AcceptanceRecordMapper acceptanceRecordMapper;
     private final OrderStatusLogMapper orderStatusLogMapper;
+    private final UserMapper userMapper;
 
     public List<RepairOrder> listOrders(RepairOrderQuery query) {
         LambdaQueryWrapper<RepairOrder> wrapper = new LambdaQueryWrapper<RepairOrder>()
@@ -99,6 +105,7 @@ public class RepairOrderService {
     public RepairOrder assignOrder(Long id, AssignOrderRequest request) {
         RepairOrder order = getOrder(id);
         requireStatus(order, OrderStatus.SUBMITTED);
+        ensureActiveRepairer(request.getRepairerId());
         order.setAssignedTo(request.getRepairerId());
         changeStatus(order, OrderStatus.ASSIGNED, "审核派单", request.getRemark());
         equipmentMapper.updateById(statusEquipment(order.getEquipmentId(), EquipmentStatus.REPAIRING));
@@ -160,6 +167,44 @@ public class RepairOrderService {
         return order;
     }
 
+    @Transactional
+    public RepairOrder cancelOrder(Long id, RemarkRequest request) {
+        RepairOrder order = getOrder(id);
+        ensureCanCancel(order);
+        if (OrderStatus.CLOSED.name().equals(order.getStatus())
+                || OrderStatus.CANCELLED.name().equals(order.getStatus())
+                || OrderStatus.REJECTED.name().equals(order.getStatus())) {
+            throw new BusinessException("当前工单状态不允许取消");
+        }
+        changeStatus(order, OrderStatus.CANCELLED, "取消工单", request == null ? null : request.getRemark());
+        equipmentMapper.updateById(statusEquipment(order.getEquipmentId(), EquipmentStatus.NORMAL));
+        return order;
+    }
+
+    @Transactional
+    public RepairOrder transferOrder(Long id, TransferOrderRequest request) {
+        RepairOrder order = getOrder(id);
+        if (!OrderStatus.ASSIGNED.name().equals(order.getStatus())
+                && !OrderStatus.IN_PROGRESS.name().equals(order.getStatus())) {
+            throw new BusinessException("只有已派单或维修中的工单可以转派");
+        }
+        ensureActiveRepairer(request.getRepairerId());
+        Long oldRepairerId = order.getAssignedTo();
+        order.setAssignedTo(request.getRepairerId());
+        repairOrderMapper.updateById(order);
+        writeLog(order.getId(), order.getStatus(), order.getStatus(), "转派维修人员",
+                formatTransferRemark(oldRepairerId, request.getRepairerId(), request.getRemark()));
+        return order;
+    }
+
+    @Transactional
+    public RepairOrder addRemark(Long id, RemarkRequest request) {
+        RepairOrder order = getOrder(id);
+        writeLog(order.getId(), order.getStatus(), order.getStatus(), "追加备注",
+                request == null ? null : request.getRemark());
+        return order;
+    }
+
     public List<OrderStatusLog> listLogs(Long orderId) {
         return orderStatusLogMapper.selectList(new LambdaQueryWrapper<OrderStatusLog>()
                 .eq(OrderStatusLog::getOrderId, orderId)
@@ -195,6 +240,29 @@ public class RepairOrderService {
         if (!Objects.equals(order.getAssignedTo(), loginUser.getId()) && !"ADMIN".equals(loginUser.getRole())) {
             throw new BusinessException(403, "只能处理分配给自己的维修任务");
         }
+    }
+
+    private void ensureActiveRepairer(Long repairerId) {
+        User user = userMapper.selectById(repairerId);
+        if (user == null) {
+            throw new BusinessException("维修人员不存在");
+        }
+        if (!UserRole.REPAIRER.name().equals(user.getRole()) || !UserStatus.ACTIVE.name().equals(user.getStatus())) {
+            throw new BusinessException("只能派单给启用中的维修人员");
+        }
+    }
+
+    private void ensureCanCancel(RepairOrder order) {
+        LoginUser loginUser = currentUser();
+        if (UserRole.REPORTER.name().equals(loginUser.getRole())
+                && !Objects.equals(order.getReporterId(), loginUser.getId())) {
+            throw new BusinessException(403, "只能取消自己提交的工单");
+        }
+    }
+
+    private String formatTransferRemark(Long oldRepairerId, Long newRepairerId, String remark) {
+        String base = "维修人员由 " + (oldRepairerId == null ? "未分配" : oldRepairerId) + " 转派为 " + newRepairerId;
+        return remark == null || remark.isBlank() ? base : base + "；" + remark.trim();
     }
 
     private Equipment statusEquipment(Long equipmentId, EquipmentStatus status) {

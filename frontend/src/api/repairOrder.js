@@ -32,6 +32,18 @@ export function acceptRepair(id, data) {
   return request.put(`/repair-orders/${id}/accept`, data)
 }
 
+export function cancelRepairOrder(id, data) {
+  return request.put(`/repair-orders/${id}/cancel`, data)
+}
+
+export function transferRepairOrder(id, data) {
+  return request.put(`/repair-orders/${id}/transfer`, data)
+}
+
+export function addRepairOrderRemark(id, data) {
+  return request.post(`/repair-orders/${id}/remarks`, data)
+}
+
 export function listOrderLogs(id) {
   return request.get(`/repair-orders/${id}/logs`)
 }

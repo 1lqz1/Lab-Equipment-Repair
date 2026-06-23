@@ -21,6 +21,7 @@ import random
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from typing import Any
@@ -55,6 +56,9 @@ class ApiClient:
 
     def put_json(self, path: str, payload: dict[str, Any] | None = None) -> ApiResult:
         return self._request("PUT", path, payload)
+
+    def delete(self, path: str) -> ApiResult:
+        return self._request("DELETE", path)
 
     def post_multipart_file(self, path: str, field_name: str, filename: str, content_type: str, data: bytes) -> ApiResult:
         # 后端头像接口使用 multipart/form-data，这里手工拼装请求体以保持脚本零依赖。
@@ -123,6 +127,9 @@ class TestRunner:
         suffix = f"{int(time.time())}_{random.randint(1000, 9999)}"
         self.pending_user = f"pending_{suffix}"
         self.created_user = f"created_{suffix}"
+        self.lab_name = f"横向扩展测试实验室_{suffix}"
+        self.equipment_code = f"EQ-X-{suffix}"
+        self.order_id: int | None = None
 
     def run(self) -> int:
         # 顺序执行很重要：注册用户、审批用户、禁用用户等测试存在数据依赖。
@@ -133,6 +140,11 @@ class TestRunner:
             self.test_pending_user_cannot_login,
             self.test_admin_create_user,
             self.test_admin_user_status_actions,
+            self.test_dict_items_available,
+            self.test_lab_crud_actions,
+            self.test_equipment_crud_actions,
+            self.test_order_horizontal_actions,
+            self.test_admin_update_user_and_reset_password,
             self.test_profile_update,
             self.test_avatar_upload,
         ]
@@ -226,9 +238,147 @@ class TestRunner:
         self.assert_api_success(self.client.put_json(f"/users/{created_id}/enable"), "启用用户失败")
         self.login_as(self.created_user, "123456")
 
+    def test_dict_items_available(self) -> None:
+        """验证第 8 项基础字典接口可读取常用下拉选项。"""
+        self.login_admin()
+        for dict_code in ("user_role", "user_status", "equipment_status", "order_status", "urgency_level", "equipment_category"):
+            result = self.client.get(f"/dicts/{dict_code}/items")
+            self.assert_api_success(result, f"读取字典 {dict_code} 失败")
+            assert result.body["data"], f"字典 {dict_code} 没有任何字典项"  # type: ignore[index]
+
+    def test_lab_crud_actions(self) -> None:
+        """验证实验室横向管理：新增、查询、编辑、停用、启用。"""
+        self.login_admin()
+        result = self.client.post_json(
+            "/labs",
+            {
+                "name": self.lab_name,
+                "location": "测试楼 501",
+                "managerId": None,
+                "description": "接口测试创建",
+            },
+        )
+        self.assert_api_success(result, "新增实验室失败")
+        lab = result.body["data"]  # type: ignore[index]
+        assert lab["status"] == "ACTIVE", f"新增实验室应默认启用，实际 {lab['status']}"
+
+        lab_id = int(lab["id"])
+        self.assert_api_success(
+            self.client.put_json(
+                f"/labs/{lab_id}",
+                {
+                    "name": self.lab_name,
+                    "location": "测试楼 502",
+                    "managerId": None,
+                    "description": "接口测试更新",
+                },
+            ),
+            "编辑实验室失败",
+        )
+        self.assert_api_success(self.client.put_json(f"/labs/{lab_id}/disable"), "停用实验室失败")
+        self.assert_api_success(self.client.put_json(f"/labs/{lab_id}/enable"), "启用实验室失败")
+
+    def test_equipment_crud_actions(self) -> None:
+        """验证设备横向管理：新增、查询、编辑、状态切换。"""
+        self.login_admin()
+        lab_id = self.find_lab_id(self.lab_name)
+        result = self.client.post_json(
+            "/equipment",
+            {
+                "code": self.equipment_code,
+                "name": "横向扩展测试设备",
+                "category": "电子测试",
+                "labId": lab_id,
+                "status": "NORMAL",
+                "responsibleUserId": None,
+                "purchaseDate": "2026-01-01",
+            },
+        )
+        self.assert_api_success(result, "新增设备失败")
+        equipment = result.body["data"]  # type: ignore[index]
+        equipment_id = int(equipment["id"])
+
+        self.assert_api_success(
+            self.client.put_json(
+                f"/equipment/{equipment_id}",
+                {
+                    "code": self.equipment_code,
+                    "name": "横向扩展测试设备-更新",
+                    "category": "教学设备",
+                    "labId": lab_id,
+                    "status": "NORMAL",
+                    "responsibleUserId": None,
+                    "purchaseDate": "2026-01-02",
+                },
+            ),
+            "编辑设备失败",
+        )
+        disabled = self.client.put_json(f"/equipment/{equipment_id}/status", {"status": "DISABLED"})
+        self.assert_api_success(disabled, "停用设备失败")
+        normal = self.client.put_json(f"/equipment/{equipment_id}/status", {"status": "NORMAL"})
+        self.assert_api_success(normal, "恢复设备失败")
+
+    def test_order_horizontal_actions(self) -> None:
+        """验证工单横向操作：提交、派单、转派、备注、取消。"""
+        self.login_as(self.pending_user, "123456")
+        equipment_id = self.find_equipment_id(self.equipment_code)
+        result = self.client.post_json(
+            "/repair-orders",
+            {
+                "equipmentId": equipment_id,
+                "faultDescription": "横向操作测试故障",
+                "urgency": "HIGH",
+                "location": "测试楼 502",
+                "contact": "13800000000",
+            },
+        )
+        self.assert_api_success(result, "提交工单失败")
+        self.order_id = int(result.body["data"]["id"])  # type: ignore[index]
+
+        self.login_admin()
+        repairer_id = self.find_user_id(self.created_user)
+        self.assert_api_success(
+            self.client.put_json(f"/repair-orders/{self.order_id}/assign", {"repairerId": repairer_id, "remark": "测试派单"}),
+            "派单失败",
+        )
+        self.assert_api_success(
+            self.client.put_json(f"/repair-orders/{self.order_id}/transfer", {"repairerId": repairer_id, "remark": "测试转派"}),
+            "转派失败",
+        )
+        self.assert_api_success(
+            self.client.post_json(f"/repair-orders/{self.order_id}/remarks", {"remark": "测试追加备注"}),
+            "追加备注失败",
+        )
+        self.assert_api_success(
+            self.client.put_json(f"/repair-orders/{self.order_id}/cancel", {"remark": "测试取消"}),
+            "取消工单失败",
+        )
+
+    def test_admin_update_user_and_reset_password(self) -> None:
+        """验证用户管理扩展：编辑用户资料、角色状态和重置密码。"""
+        self.login_admin()
+        created_id = self.find_user_id(self.created_user)
+        self.assert_api_success(
+            self.client.put_json(
+                f"/users/{created_id}",
+                {
+                    "realName": "维修人员编辑测试",
+                    "phone": "13600000000",
+                    "role": "REPAIRER",
+                    "status": "ACTIVE",
+                },
+            ),
+            "编辑用户失败",
+        )
+        self.assert_api_success(
+            self.client.put_json(f"/users/{created_id}/password", {"password": "654321"}),
+            "重置密码失败",
+        )
+        self.login_as(self.created_user, "654321")
+
     def test_profile_update(self) -> None:
         """验证当前登录用户可以修改自己的姓名和电话。"""
-        self.login_as(self.created_user, "123456")
+        self.login_as(self.created_user, "654321")
         result = self.client.put_json("/profile", {"realName": "资料修改测试", "phone": "13700000000"})
         self.assert_api_success(result, "修改个人资料失败")
         data = result.body["data"]  # type: ignore[index]
@@ -237,7 +387,7 @@ class TestRunner:
 
     def test_avatar_upload(self) -> None:
         """验证头像接口接收图片文件，并返回可访问的相对路径。"""
-        self.login_as(self.created_user, "123456")
+        self.login_as(self.created_user, "654321")
         result = self.client.post_multipart_file("/profile/avatar", "file", "avatar.png", "image/png", PNG_1X1)
         self.assert_api_success(result, "头像上传失败")
         data = result.body["data"]  # type: ignore[index]
@@ -262,6 +412,22 @@ class TestRunner:
             if user["username"] == username:
                 return int(user["id"])
         raise AssertionError(f"用户列表中找不到账号 {username}")
+
+    def find_lab_id(self, lab_name: str) -> int:
+        result = self.client.get(f"/labs?keyword={urllib.parse.quote(lab_name)}")
+        self.assert_api_success(result, "查询实验室列表失败")
+        for lab in result.body["data"]:  # type: ignore[index]
+            if lab["name"] == lab_name:
+                return int(lab["id"])
+        raise AssertionError(f"实验室列表中找不到 {lab_name}")
+
+    def find_equipment_id(self, code: str) -> int:
+        result = self.client.get(f"/equipment?keyword={urllib.parse.quote(code)}")
+        self.assert_api_success(result, "查询设备列表失败")
+        for equipment in result.body["data"]:  # type: ignore[index]
+            if equipment["code"] == code:
+                return int(equipment["id"])
+        raise AssertionError(f"设备列表中找不到 {code}")
 
     @staticmethod
     def assert_api_success(result: ApiResult, message: str) -> None:

@@ -4,6 +4,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.lab_equipment_repair.common.ApiResponse;
 import org.example.lab_equipment_repair.dto.CreateUserRequest;
+import org.example.lab_equipment_repair.dto.ResetPasswordRequest;
+import org.example.lab_equipment_repair.dto.UpdateUserRequest;
 import org.example.lab_equipment_repair.dto.UserResponse;
 import org.example.lab_equipment_repair.service.UserService;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,14 +29,30 @@ public class UserController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ApiResponse<List<UserResponse>> listUsers(@RequestParam(required = false) String role) {
-        return ApiResponse.success(userService.listUsers(role));
+    public ApiResponse<List<UserResponse>> listUsers(
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String keyword) {
+        return ApiResponse.success(userService.listUsers(role, status, keyword));
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request) {
         return ApiResponse.success(userService.createUser(request));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<UserResponse> updateUser(@PathVariable Long id, @Valid @RequestBody UpdateUserRequest request) {
+        return ApiResponse.success(userService.updateUser(id, request));
+    }
+
+    @PutMapping("/{id}/password")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<Void> resetPassword(@PathVariable Long id, @Valid @RequestBody ResetPasswordRequest request) {
+        userService.resetPassword(id, request.password());
+        return ApiResponse.success();
     }
 
     @PutMapping("/{id}/approve")

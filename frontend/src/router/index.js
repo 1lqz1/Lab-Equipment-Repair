@@ -13,6 +13,7 @@ import ProfileView from '@/views/ProfileView.vue'
 import SubmitOrderView from '@/views/orders/SubmitOrderView.vue'
 import RepairTaskView from '@/views/repair/RepairTaskView.vue'
 import UserView from '@/views/admin/UserView.vue'
+import DictView from '@/views/admin/DictView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -42,6 +43,7 @@ const router = createRouter({
         { path: 'equipment', name: 'equipment', component: EquipmentView },
         { path: 'labs', name: 'labs', component: LabView, meta: { roles: ['ADMIN', 'LAB_MANAGER'] } },
         { path: 'users', name: 'users', component: UserView, meta: { roles: ['ADMIN'] } },
+        { path: 'dicts', name: 'dicts', component: DictView, meta: { roles: ['ADMIN'] } },
         { path: 'profile', name: 'profile', component: ProfileView },
       ],
     },

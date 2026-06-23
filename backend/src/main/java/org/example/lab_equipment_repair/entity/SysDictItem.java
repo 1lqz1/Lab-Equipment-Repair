@@ -6,20 +6,22 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("lab")
-public class Lab {
+@TableName("sys_dict_item")
+public class SysDictItem {
 
     private Long id;
 
-    private String name;
+    private Long dictId;
 
-    private String location;
+    private String itemValue;
 
-    private Long managerId;
+    private String itemLabel;
 
-    private String status;
+    private Boolean enabled;
 
-    private String description;
+    private Integer sortOrder;
+
+    private String remark;
 
     private LocalDateTime createdAt;
 

@@ -17,6 +17,7 @@ const menus = computed(() => {
     { path: '/equipment', label: '设备管理', icon: '设', roles: ['ADMIN', 'LAB_MANAGER', 'REPORTER'] },
     { path: '/labs', label: '实验室管理', icon: '室', roles: ['ADMIN', 'LAB_MANAGER'] },
     { path: '/users', label: '用户管理', icon: '员', roles: ['ADMIN'] },
+    { path: '/dicts', label: '字典管理', icon: '典', roles: ['ADMIN'] },
     { path: '/profile', label: '个人资料', icon: '我', roles: ['ADMIN', 'LAB_MANAGER', 'REPAIRER', 'REPORTER'] },
   ]
   return items.filter((item) => item.roles.includes(role))

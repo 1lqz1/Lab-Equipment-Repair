@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.lab_equipment_repair.common.BusinessException;
 import org.example.lab_equipment_repair.dto.CreateUserRequest;
 import org.example.lab_equipment_repair.dto.RegisterRequest;
+import org.example.lab_equipment_repair.dto.UpdateUserRequest;
 import org.example.lab_equipment_repair.dto.UserResponse;
 import org.example.lab_equipment_repair.entity.User;
 import org.example.lab_equipment_repair.enums.UserRole;
@@ -31,9 +32,16 @@ public class UserService {
 
     private final PasswordEncoder passwordEncoder;
 
-    public List<UserResponse> listUsers(String role) {
+    public List<UserResponse> listUsers(String role, String status, String keyword) {
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<User>()
                 .eq(role != null && !role.isBlank(), User::getRole, role)
+                .eq(status != null && !status.isBlank(), User::getStatus, status)
+                .and(keyword != null && !keyword.isBlank(), query -> query
+                        .like(User::getUsername, keyword)
+                        .or()
+                        .like(User::getRealName, keyword)
+                        .or()
+                        .like(User::getPhone, keyword))
                 .orderByDesc(User::getCreatedAt);
         return userMapper.selectList(wrapper).stream().map(UserResponse::from).toList();
     }
@@ -100,6 +108,31 @@ public class UserService {
         return updateStatus(id, UserStatus.ACTIVE);
     }
 
+    public UserResponse updateUser(Long id, UpdateUserRequest request) {
+        User user = getById(id);
+        UserRole role = parseRole(request.role());
+        UserStatus status = parseStatus(request.status());
+        if (UserStatus.DISABLED.equals(status)) {
+            ensureCanDisable(id);
+        }
+        user.setRealName(request.realName().trim());
+        user.setPhone(normalize(request.phone()));
+        user.setRole(role.name());
+        user.setStatus(status.name());
+        userMapper.updateById(user);
+        log.info("管理员更新用户：userId={}, username={}, role={}, status={}",
+                user.getId(), user.getUsername(), user.getRole(), user.getStatus());
+        return UserResponse.from(user);
+    }
+
+    public void resetPassword(Long id, String password) {
+        User user = getById(id);
+        user.setPasswordHash(passwordEncoder.encode(password));
+        userMapper.updateById(user);
+        log.info("管理员重置用户密码：userId={}, username={}, passwordLength={}",
+                user.getId(), user.getUsername(), password == null ? 0 : password.length());
+    }
+
     private UserResponse updateStatus(Long id, UserStatus status) {
         User user = getById(id);
         String oldStatus = user.getStatus();
@@ -160,5 +193,18 @@ public class UserService {
             log.warn("用户角色不合法：role={}", role);
             throw new BusinessException("用户角色不合法");
         }
+    }
+
+    private UserStatus parseStatus(String status) {
+        try {
+            return UserStatus.valueOf(status.trim().toUpperCase());
+        } catch (IllegalArgumentException exception) {
+            log.warn("用户状态不合法：status={}", status);
+            throw new BusinessException("用户状态不合法");
+        }
+    }
+
+    private String normalize(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 }

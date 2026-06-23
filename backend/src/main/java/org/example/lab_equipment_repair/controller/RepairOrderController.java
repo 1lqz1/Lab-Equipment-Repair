@@ -9,6 +9,7 @@ import org.example.lab_equipment_repair.dto.FinishRepairRequest;
 import org.example.lab_equipment_repair.dto.RemarkRequest;
 import org.example.lab_equipment_repair.dto.RepairOrderQuery;
 import org.example.lab_equipment_repair.dto.SubmitOrderRequest;
+import org.example.lab_equipment_repair.dto.TransferOrderRequest;
 import org.example.lab_equipment_repair.entity.OrderStatusLog;
 import org.example.lab_equipment_repair.entity.RepairOrder;
 import org.example.lab_equipment_repair.service.RepairOrderService;
@@ -74,6 +75,23 @@ public class RepairOrderController {
     @PreAuthorize("hasRole('REPORTER') or hasRole('LAB_MANAGER') or hasRole('ADMIN')")
     public ApiResponse<RepairOrder> acceptOrder(@PathVariable Long id, @RequestBody AcceptanceRequest request) {
         return ApiResponse.success(repairOrderService.acceptOrder(id, request));
+    }
+
+    @PutMapping("/{id}/cancel")
+    @PreAuthorize("hasRole('REPORTER') or hasRole('LAB_MANAGER') or hasRole('ADMIN')")
+    public ApiResponse<RepairOrder> cancelOrder(@PathVariable Long id, @RequestBody(required = false) RemarkRequest request) {
+        return ApiResponse.success(repairOrderService.cancelOrder(id, request));
+    }
+
+    @PutMapping("/{id}/transfer")
+    @PreAuthorize("hasRole('LAB_MANAGER') or hasRole('ADMIN')")
+    public ApiResponse<RepairOrder> transferOrder(@PathVariable Long id, @Valid @RequestBody TransferOrderRequest request) {
+        return ApiResponse.success(repairOrderService.transferOrder(id, request));
+    }
+
+    @PostMapping("/{id}/remarks")
+    public ApiResponse<RepairOrder> addRemark(@PathVariable Long id, @RequestBody(required = false) RemarkRequest request) {
+        return ApiResponse.success(repairOrderService.addRemark(id, request));
     }
 
     @GetMapping("/{id}/logs")
