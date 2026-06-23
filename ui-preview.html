@@ -1,0 +1,2432 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>实验室设备玄学报修系统 - 演示版</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Instrument+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+      :root {
+        --color-bg: #070604;
+        --color-bg-strong: #0d0c0a;
+        --color-panel: #141310;
+        --color-panel-subtle: #1c1a16;
+        --color-panel-muted: #272520;
+        --color-border: rgba(223, 199, 147, 0.12);
+        --color-border-strong: rgba(223, 199, 147, 0.35);
+        --color-text: #f3ede2;
+        --color-muted: #9d968b;
+        
+        --color-primary: #dfc793;
+        --color-primary-dark: #c5ad7c;
+        --color-primary-soft: rgba(223, 199, 147, 0.08);
+        
+        --color-accent: #c5a880;
+        --color-accent-soft: rgba(197, 168, 128, 0.1);
+        
+        --color-warning: #e2a356;
+        --color-warning-soft: rgba(226, 163, 86, 0.1);
+        --color-danger: #ea6666;
+        --color-danger-soft: rgba(234, 102, 102, 0.1);
+        --color-success: #70c48b;
+        --color-success-soft: rgba(112, 196, 139, 0.1);
+        
+        --shadow-panel: 0 10px 40px rgba(0, 0, 0, 0.6);
+        --shadow-lift: 0 20px 50px rgba(0, 0, 0, 0.85), 0 0 30px rgba(223, 199, 147, 0.05);
+        --radius: 12px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html, body {
+        width: 100%;
+        min-height: 100%;
+        margin: 0;
+        padding: 0;
+        background-color: var(--color-bg);
+        color: var(--color-text);
+        font-family: "Instrument Sans", "Inter", "Microsoft YaHei", sans-serif;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+      }
+
+      /* Subtle Gold Paper Texture Grain Overlay */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0.015;
+        pointer-events: none;
+        z-index: 9999;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      }
+
+      .app-shell {
+        display: grid;
+        min-height: 100dvh;
+        grid-template-columns: 280px minmax(0, 1fr);
+      }
+
+      .sidebar {
+        position: sticky;
+        top: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+        height: 100dvh;
+        padding: 30px 20px;
+        background: var(--color-bg-strong);
+        border-right: 1px solid var(--color-border);
+        box-shadow: 10px 0 30px rgba(0, 0, 0, 0.4);
+        z-index: 10;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-height: 60px;
+        padding: 10px 14px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius);
+        background: rgba(223, 199, 147, 0.03);
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 44px;
+        height: 44px;
+        place-items: center;
+        border-radius: var(--radius);
+        color: #070604;
+        background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+        box-shadow: 0 4px 12px rgba(223, 199, 147, 0.25);
+        font-weight: 800;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 16px;
+      }
+
+      .brand strong {
+        display: block;
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-size: 18px;
+        letter-spacing: 0.5px;
+        color: var(--color-primary);
+        font-weight: 600;
+      }
+
+      .brand span {
+        display: block;
+        margin-top: 2px;
+        color: var(--color-muted);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .menu {
+        display: grid;
+        gap: 8px;
+      }
+
+      .menu a {
+        display: flex;
+        min-height: 46px;
+        align-items: center;
+        gap: 12px;
+        padding: 0 16px;
+        border: 1px solid transparent;
+        border-radius: var(--radius);
+        color: var(--color-muted);
+        cursor: pointer;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .menu a span {
+        display: grid;
+        width: 26px;
+        height: 26px;
+        place-items: center;
+        border-radius: 6px;
+        color: var(--color-muted);
+        background: rgba(223, 199, 147, 0.05);
+        font-size: 12px;
+        font-weight: 800;
+        transition: all 0.25s ease;
+      }
+
+      .menu a strong {
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .menu a.active,
+      .menu a:hover {
+        color: var(--color-text);
+        border-color: var(--color-border);
+        background: rgba(223, 199, 147, 0.05);
+      }
+
+      .menu a.active {
+        color: var(--color-primary);
+        border-color: rgba(223, 199, 147, 0.3);
+        background: rgba(223, 199, 147, 0.08);
+      }
+
+      .menu a.active span,
+      .menu a:hover span {
+        color: #070604;
+        background: var(--color-primary);
+        box-shadow: 0 0 8px rgba(223, 199, 147, 0.3);
+      }
+
+      .sidebar-status {
+        display: grid;
+        gap: 6px;
+        margin-top: auto;
+        padding: 16px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius);
+        background: rgba(223, 199, 147, 0.02);
+      }
+
+      .sidebar-status span {
+        color: var(--color-muted);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .sidebar-status strong {
+        color: var(--color-primary);
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+      }
+
+      .main-area {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .topbar {
+        display: flex;
+        min-height: 80px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        margin: 24px 24px 0;
+        padding: 0 24px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius);
+        background: rgba(20, 19, 16, 0.6);
+        box-shadow: var(--shadow-panel);
+        backdrop-filter: blur(20px);
+      }
+
+      .topbar-title {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .topbar-title span {
+        color: var(--color-muted);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .topbar-title strong {
+        color: var(--color-text);
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-size: 22px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+      }
+
+      .topbar-user {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .user-avatar {
+        display: grid;
+        width: 38px;
+        height: 38px;
+        place-items: center;
+        border-radius: var(--radius);
+        color: #070604;
+        background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+        font-size: 15px;
+        font-weight: 800;
+        box-shadow: 0 2px 8px rgba(223, 199, 147, 0.2);
+      }
+
+      .topbar-user div strong {
+        display: block;
+        color: var(--color-text);
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .topbar-user div span {
+        display: block;
+        color: var(--color-muted);
+        font-size: 11px;
+      }
+
+      .content {
+        width: min(100%, 1460px);
+        padding: 24px;
+        align-self: center;
+      }
+
+      .page-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 24px;
+      }
+
+      .page-header h1 {
+        margin: 0;
+        color: var(--color-primary);
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-size: 36px;
+        font-weight: 600;
+        line-height: 1.15;
+      }
+
+      .page-header p {
+        max-width: 720px;
+        margin: 8px 0 0;
+        color: var(--color-muted);
+        font-size: 14px;
+      }
+
+      .panel,
+      .data-card,
+      .form-card {
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius);
+        background: var(--color-panel);
+        box-shadow: var(--shadow-panel);
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .panel {
+        padding: 26px;
+        margin-bottom: 24px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .panel::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--color-primary), transparent);
+        opacity: 0.5;
+      }
+
+      .panel h2 {
+        margin: 0 0 18px;
+        color: var(--color-primary);
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-size: 22px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+      }
+
+      .card-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 20px;
+        margin-bottom: 24px;
+      }
+
+      .data-card {
+        position: relative;
+        overflow: hidden;
+        min-height: 130px;
+        padding: 20px;
+        background: var(--color-panel-subtle);
+      }
+
+      .data-card::before {
+        position: absolute;
+        inset: 0 0 auto;
+        height: 3px;
+        background: var(--card-accent, var(--color-primary));
+        content: '';
+        opacity: 0.7;
+      }
+
+      .data-card::after {
+        position: absolute;
+        right: 20px;
+        bottom: 20px;
+        width: 50px;
+        height: 50px;
+        border-radius: var(--radius);
+        background: var(--card-soft, var(--color-primary-soft));
+        content: '';
+        opacity: 0.15;
+        transition: transform 0.3s ease;
+      }
+
+      .data-card:hover {
+        border-color: var(--color-primary-dark);
+        box-shadow: var(--shadow-lift);
+        transform: translateY(-3px);
+      }
+
+      .data-card:hover::after {
+        transform: scale(1.1);
+      }
+
+      .data-card[data-tone='blue'] {
+        --card-accent: #dfc793;
+        --card-soft: rgba(223, 199, 147, 0.4);
+      }
+
+      .data-card[data-tone='amber'] {
+        --card-accent: var(--color-warning);
+        --card-soft: rgba(226, 163, 86, 0.4);
+      }
+
+      .data-card[data-tone='teal'] {
+        --card-accent: var(--color-accent);
+        --card-soft: rgba(197, 168, 128, 0.4);
+      }
+
+      .data-card[data-tone='green'] {
+        --card-accent: var(--color-success);
+        --card-soft: rgba(112, 196, 139, 0.4);
+      }
+
+      .data-card span {
+        position: relative;
+        z-index: 1;
+        display: block;
+        color: var(--color-muted);
+        font-size: 13px;
+        font-weight: 500;
+      }
+
+      .data-card strong {
+        position: relative;
+        z-index: 1;
+        display: block;
+        margin-top: 14px;
+        color: var(--color-text);
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 38px;
+        font-weight: 600;
+        line-height: 1;
+      }
+
+      .data-table {
+        width: 100%;
+        min-width: 760px;
+        border-collapse: collapse;
+      }
+
+      .data-table th,
+      .data-table td {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--color-border);
+        text-align: left;
+        vertical-align: middle;
+      }
+
+      .data-table th {
+        color: var(--color-primary);
+        background: var(--color-panel-subtle);
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+      }
+
+      .data-table tbody tr {
+        transition: background-color 0.15s ease;
+      }
+
+      .data-table tbody tr:hover {
+        background: rgba(223, 199, 147, 0.02);
+      }
+
+      .status-tag {
+        display: inline-flex;
+        min-width: 74px;
+        min-height: 26px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        border: 1px solid transparent;
+      }
+
+      .status-tag[data-status='CLOSED'],
+      .status-tag[data-status='NORMAL'],
+      .status-tag[data-status='ACCEPTED'],
+      .status-tag[data-status='ACTIVE'] {
+        color: var(--color-success);
+        background: var(--color-success-soft);
+        border-color: rgba(112, 196, 139, 0.2);
+      }
+
+      .status-tag[data-status='REJECTED'],
+      .status-tag[data-status='CANCELLED'],
+      .status-tag[data-status='SCRAPPED'],
+      .status-tag[data-status='DISABLED'] {
+        color: var(--color-danger);
+        background: var(--color-danger-soft);
+        border-color: rgba(234, 102, 102, 0.2);
+      }
+
+      .status-tag[data-status='IN_PROGRESS'],
+      .status-tag[data-status='REPAIRING'],
+      .status-tag[data-status='REPAIRED'],
+      .status-tag[data-status='PENDING'],
+      .status-tag[data-status='SUBMITTED'],
+      .status-tag[data-status='ASSIGNED'] {
+        color: var(--color-warning);
+        background: var(--color-warning-soft);
+        border-color: rgba(226, 163, 86, 0.2);
+      }
+
+      .primary-button,
+      .ghost-button,
+      .link-button {
+        display: inline-flex;
+        min-height: 38px;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid transparent;
+        border-radius: var(--radius);
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .primary-button {
+        padding: 0 20px;
+        color: #070604;
+        background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+        box-shadow: 0 4px 12px rgba(223, 199, 147, 0.2);
+        font-weight: 600;
+      }
+
+      .primary-button:hover {
+        transform: translateY(-1.5px);
+        box-shadow: 0 6px 18px rgba(223, 199, 147, 0.35);
+      }
+
+      .primary-button:active,
+      .ghost-button:active {
+        transform: translateY(0.5px);
+      }
+
+      .ghost-button {
+        padding: 0 16px;
+        border: 1px solid var(--color-border);
+        color: var(--color-text);
+        background: transparent;
+      }
+
+      .ghost-button:hover {
+        border-color: var(--color-primary);
+        background: var(--color-primary-soft);
+        color: var(--color-primary);
+      }
+
+      .ghost-on-dark {
+        border-color: rgba(223, 199, 147, 0.25);
+        color: var(--color-primary);
+        background: rgba(223, 199, 147, 0.03);
+      }
+
+      .ghost-on-dark:hover {
+        border-color: var(--color-primary);
+        background: rgba(223, 199, 147, 0.08);
+      }
+
+      .link-button {
+        min-height: auto;
+        padding: 0;
+        color: var(--color-primary);
+        background: transparent;
+        font-weight: 600;
+      }
+
+      .link-button:hover {
+        color: var(--color-text);
+        text-decoration: underline;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 20px;
+      }
+
+      label {
+        display: grid;
+        gap: 8px;
+        color: var(--color-muted);
+        font-size: 13px;
+        font-weight: 500;
+      }
+
+      input, select, textarea {
+        width: 100%;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius);
+        padding: 12px 14px;
+        color: var(--color-text);
+        background: var(--color-bg-strong);
+        outline: none;
+        transition: all 0.2s ease;
+      }
+
+      input::placeholder, textarea::placeholder {
+        color: #555149;
+      }
+
+      input:focus, select:focus, textarea:focus {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(223, 199, 147, 0.15);
+        background: var(--color-panel);
+      }
+
+      .form-wide, .detail-wide {
+        grid-column: 1 / -1;
+      }
+
+      .form-actions {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+      }
+
+      .form-error, .form-success {
+        grid-column: 1 / -1;
+        margin: 0;
+        padding: 12px 16px;
+        border-radius: var(--radius);
+        font-size: 13px;
+        font-weight: 500;
+        border: 1px solid transparent;
+      }
+
+      .form-error {
+        color: var(--color-danger);
+        background: var(--color-danger-soft);
+        border-color: rgba(234, 102, 102, 0.15);
+      }
+
+      .form-success {
+        color: var(--color-success);
+        background: var(--color-success-soft);
+        border-color: rgba(112, 196, 139, 0.15);
+      }
+
+      .table-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 20px;
+      }
+
+      .table-toolbar h2 {
+        margin: 0;
+      }
+
+      .table-toolbar p {
+        margin: 6px 0 0;
+        color: var(--color-muted);
+        font-size: 13px;
+      }
+
+      .table-scroll {
+        width: 100%;
+        overflow-x: auto;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius);
+        background: var(--color-panel-subtle);
+      }
+
+      .row-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      /* Humorous login style customization */
+      .login-page {
+        display: grid;
+        min-height: 100dvh;
+        place-items: center;
+        padding: 24px;
+        background: 
+          radial-gradient(circle at 0% 0%, rgba(223, 199, 147, 0.08) 0%, transparent 50%),
+          radial-gradient(circle at 100% 100%, rgba(197, 168, 128, 0.08) 0%, transparent 50%),
+          #070604;
+      }
+
+      .login-panel {
+        display: grid;
+        width: min(1120px, 100%);
+        grid-template-columns: minmax(0, 1.2fr) 420px;
+        gap: 24px;
+        align-items: stretch;
+      }
+
+      .login-copy {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 580px;
+        overflow: hidden;
+        padding: 48px;
+        border-radius: var(--radius);
+        color: var(--color-text);
+        background: var(--color-panel-subtle);
+        border: 1px solid var(--color-border);
+        box-shadow: var(--shadow-lift);
+      }
+
+      .login-copy::after {
+        position: absolute;
+        right: -80px;
+        bottom: -60px;
+        width: 250px;
+        height: 250px;
+        border: 1px solid rgba(223, 199, 147, 0.04);
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(223, 199, 147, 0.02) 0%, transparent 70%);
+        content: '';
+        pointer-events: none;
+      }
+
+      .auth-kicker {
+        display: inline-flex;
+        width: fit-content;
+        min-height: 30px;
+        align-items: center;
+        padding: 0 14px;
+        border: 1px solid rgba(223, 199, 147, 0.2);
+        border-radius: var(--radius);
+        color: var(--color-primary);
+        background: rgba(223, 199, 147, 0.04);
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .login-copy strong {
+        display: block;
+        max-width: 560px;
+        margin-top: 30px;
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-size: 42px;
+        line-height: 1.15;
+        color: var(--color-primary);
+      }
+
+      .login-copy p {
+        max-width: 540px;
+        margin: 18px 0 0;
+        color: var(--color-muted);
+        font-size: 15px;
+        line-height: 1.7;
+      }
+
+      .auth-flow {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: auto;
+      }
+
+      .auth-flow span {
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius);
+        background: rgba(223, 199, 147, 0.02);
+        min-height: 80px;
+        padding: 16px 12px;
+        color: var(--color-text);
+        font-size: 13px;
+        font-weight: 500;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        transition: all 0.25s ease;
+      }
+
+      .auth-flow span:hover {
+        border-color: var(--color-primary);
+        background: rgba(223, 199, 147, 0.06);
+        transform: translateY(-2px);
+      }
+
+      .auth-flow span strong {
+        display: block;
+        font-size: 12px;
+        color: var(--color-primary);
+      }
+
+      .auth-flow span small {
+        display: block;
+        font-size: 9px;
+        color: var(--color-muted);
+        margin-top: 4px;
+      }
+
+      .auth-roles {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .auth-roles span {
+        display: block;
+        text-align: center;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius);
+        padding: 8px;
+        background: rgba(223, 199, 147, 0.02);
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .auth-roles span:hover {
+        border-color: var(--color-primary);
+        background: rgba(223, 199, 147, 0.06);
+      }
+
+      .auth-roles span strong {
+        color: var(--color-primary);
+        font-size: 12px;
+        display: block;
+      }
+
+      .auth-roles span small {
+        font-size: 10px;
+        color: var(--color-muted);
+        display: block;
+      }
+
+      .auth-note {
+        margin-top: 24px;
+        padding: 18px;
+        color: var(--color-muted);
+        line-height: 1.6;
+        font-size: 13px;
+        border-left: 3px solid var(--color-primary);
+        border-top: 1px solid var(--color-border);
+        border-bottom: 1px solid var(--color-border);
+        border-right: 1px solid var(--color-border);
+        border-radius: var(--radius);
+        background: rgba(223, 199, 147, 0.02);
+      }
+
+      .auth-card {
+        width: 100%;
+        min-height: 580px;
+        align-content: center;
+        padding: 40px;
+        background: var(--color-panel-subtle);
+        border: 1px solid var(--color-border);
+        box-shadow: var(--shadow-lift);
+      }
+
+      .auth-card-header {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+
+      .auth-card-header span {
+        color: var(--color-primary);
+        font-size: 13px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .auth-card-header h1 {
+        margin: 0;
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-size: 32px;
+        font-weight: 600;
+        color: var(--color-text);
+      }
+
+      .auth-card-header p {
+        margin: 0;
+        color: var(--color-muted);
+        font-size: 13px;
+      }
+
+      .form-link {
+        color: var(--color-primary);
+        font-size: 13px;
+        font-weight: 500;
+        text-align: center;
+        display: block;
+        margin-top: 16px;
+        cursor: pointer;
+      }
+
+      .form-link:hover {
+        color: var(--color-text);
+        text-decoration: underline;
+      }
+
+      .dashboard-hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 230px;
+        gap: 20px;
+        align-items: stretch;
+        margin-bottom: 24px;
+        padding: 30px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius);
+        color: var(--color-text);
+        background: 
+          linear-gradient(135deg, rgba(223, 199, 147, 0.08) 0%, transparent 50%),
+          var(--color-panel-subtle);
+        box-shadow: var(--shadow-lift);
+      }
+
+      .dashboard-hero span {
+        color: var(--color-primary);
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .dashboard-hero h2 {
+        max-width: 720px;
+        margin: 12px 0 0;
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-size: 30px;
+        font-weight: 600;
+        line-height: 1.25;
+        color: var(--color-primary);
+      }
+
+      .dashboard-hero p {
+        max-width: 680px;
+        margin: 12px 0 0;
+        color: var(--color-muted);
+        font-size: 14px;
+      }
+
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 22px;
+      }
+
+      .hero-metric {
+        display: grid;
+        align-content: center;
+        justify-items: center;
+        border: 1px solid rgba(223, 199, 147, 0.2);
+        border-radius: var(--radius);
+        background: rgba(223, 199, 147, 0.03);
+      }
+
+      .hero-metric span {
+        color: var(--color-muted);
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      .hero-metric strong {
+        margin-top: 8px;
+        color: var(--color-primary);
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 48px;
+        line-height: 1;
+      }
+
+      .workflow-line {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .workflow-line span {
+        position: relative;
+        min-height: 94px;
+        padding: 18px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius);
+        background: var(--color-panel-subtle);
+        text-align: center;
+        transition: all 0.3s ease;
+      }
+
+      .workflow-line span:hover {
+        border-color: var(--color-primary);
+        transform: translateY(-2px);
+      }
+
+      .workflow-line span::before {
+        display: block;
+        width: 32px;
+        height: 3px;
+        margin: 0 auto 12px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+        content: '';
+      }
+
+      /* Detail overlay drawer style */
+      .overlay-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+      }
+
+      .overlay-backdrop.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .detail-drawer {
+        width: min(720px, 95vw);
+        max-height: 90vh;
+        overflow-y: auto;
+        background: var(--color-panel);
+        border: 1px solid var(--color-primary-dark);
+        border-radius: var(--radius);
+        padding: 30px;
+        box-shadow: var(--shadow-lift);
+        transform: scale(0.9);
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      .overlay-backdrop.active .detail-drawer {
+        transform: scale(1);
+      }
+
+      .drawer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--color-border);
+        padding-bottom: 14px;
+        margin-bottom: 20px;
+      }
+
+      .drawer-header h3 {
+        margin: 0;
+        color: var(--color-primary);
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-size: 24px;
+        font-weight: 600;
+      }
+
+      .close-drawer {
+        background: transparent;
+        border: 0;
+        color: var(--color-muted);
+        font-size: 24px;
+        cursor: pointer;
+        transition: color 0.2s ease;
+      }
+
+      .close-drawer:hover {
+        color: var(--color-danger);
+      }
+
+      .timeline {
+        display: grid;
+        gap: 16px;
+        margin: 20px 0 0;
+        padding-left: 20px;
+        border-left: 1px solid var(--color-border);
+        position: relative;
+      }
+
+      .timeline-item {
+        position: relative;
+        padding-bottom: 8px;
+      }
+
+      .timeline-item::before {
+        content: "";
+        position: absolute;
+        left: -25px;
+        top: 6px;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--color-primary);
+        border: 2px solid var(--color-bg);
+        box-shadow: 0 0 8px var(--color-primary);
+      }
+
+      .timeline-item strong {
+        display: block;
+        font-size: 13px;
+        color: var(--color-text);
+      }
+
+      .timeline-item span {
+        display: block;
+        font-size: 11px;
+        color: var(--color-muted);
+      }
+
+      .timeline-item p {
+        margin: 4px 0 0;
+        color: var(--color-muted);
+        font-size: 12px;
+      }
+
+      /* Modal alerts style */
+      .funny-alert {
+        padding: 14px 18px;
+        border: 1px dashed var(--color-primary);
+        border-radius: var(--radius);
+        background: rgba(223, 199, 147, 0.02);
+        margin-bottom: 20px;
+        font-size: 13px;
+      }
+
+      .funny-alert strong {
+        color: var(--color-primary);
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .avatar-block {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .avatar-preview {
+        display: grid;
+        width: 120px;
+        height: 120px;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--color-panel-subtle);
+        border: 1px solid var(--color-border);
+        color: var(--color-primary);
+        font-size: 40px;
+        font-weight: bold;
+        box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      @media (max-width: 960px) {
+        .app-shell, .login-panel {
+          grid-template-columns: 1fr;
+        }
+
+        .sidebar {
+          position: static;
+          height: auto;
+          gap: 16px;
+          padding: 16px;
+          border-right: 0;
+          border-bottom: 1px solid var(--color-border);
+        }
+
+        .menu {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .topbar {
+          align-items: stretch;
+          flex-direction: column;
+          height: auto;
+          margin: 16px 16px 0;
+          padding: 16px;
+        }
+
+        .topbar-user {
+          justify-content: space-between;
+        }
+
+        .content {
+          padding: 18px 16px;
+        }
+
+        .card-grid, .dashboard-hero, .form-grid, .workflow-line {
+          grid-template-columns: 1fr;
+        }
+
+        .panel {
+          overflow-x: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- App Shell wrapping the layout -->
+    <div id="app">
+      <!-- RENDERED BY JAVASCRIPT -->
+    </div>
+
+    <!-- Details Overlay Modal -->
+    <div id="detailOverlay" class="overlay-backdrop" onclick="closeOrderDrawer(event)">
+      <div class="detail-drawer" onclick="event.stopPropagation()">
+        <div class="drawer-header">
+          <h3 id="drawerOrderNo">ORD-XXXXXX</h3>
+          <button type="button" class="close-drawer" onclick="hideOrderDrawer()">✕</button>
+        </div>
+        <div id="drawerBody">
+          <!-- Dynamically populated drawer content -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Core State & Logic Script -->
+    <script>
+      // 1. Initial State Database
+      const state = {
+        isLoggedIn: false,
+        currentUser: null,
+        activeTab: 'dashboard',
+        
+        users: [
+          { username: 'admin', realName: '王极权', role: 'ADMIN', desc: '掌握后台生杀大权的超级大佬' },
+          { username: 'manager', realName: '李掌门', role: 'LAB_MANAGER', desc: '实验室日常唠叨“轻拿轻放”的管家' },
+          { username: 'repairer', realName: '鲁大师', role: 'REPAIRER', desc: '玄学机修专家，拍打技术十级' },
+          { username: 'reporter', realName: '小白同学', role: 'REPORTER', desc: '日常背锅侠，发誓只摸了一下机器' }
+        ],
+
+        labs: [
+          { id: 1, name: '现代仪器分析实验室', location: '实验楼 A302', description: '高端仪器堆砌的神秘地带，禁止吃泡面' },
+          { id: 2, name: '生命科学实验室', location: '实验楼 B105', description: '充满了活体和培养基，时常传来奇怪的味道' },
+          { id: 3, name: '公共教学实验室', location: '综合楼 401', description: '普通投影仪与电脑的集聚地，饱经风霜' }
+        ],
+
+        equipment: [
+          { id: 1, code: 'EQ-001', name: '电子显微镜', category: '显微分析', labId: 1, status: 'NORMAL', responsible: '王极权' },
+          { id: 2, code: 'EQ-002', name: '高速离心机', category: '样品制备', labId: 1, status: 'REPAIRING', responsible: '李掌门' },
+          { id: 3, code: 'EQ-003', name: '数字示波器', category: '电子测试', labId: 2, status: 'NORMAL', responsible: '鲁大师' },
+          { id: 4, code: 'EQ-004', name: '恒温培养箱', category: '生物培养', labId: 2, status: 'NORMAL', responsible: '小白同学' },
+          { id: 5, code: 'EQ-005', name: '老旧投影仪', category: '教学设备', labId: 3, status: 'DISABLED', responsible: '李掌门' }
+        ],
+
+        orders: [
+          {
+            id: 1,
+            orderNo: 'ORD-202606-001',
+            equipmentId: 2,
+            reporterId: 'reporter',
+            faultDescription: '离心机高速旋转时发出像直升机一样的轰鸣声，甚至开始在桌面上慢慢平移，我高度怀疑它想飞回原产地。',
+            urgency: 'HIGH',
+            location: '实验楼 A302',
+            contact: '138-8888-8888',
+            status: 'IN_PROGRESS',
+            assignedTo: 'repairer',
+            logs: [
+              { time: '2026-06-23 09:00:00', operator: '小白同学', fromStatus: '', toStatus: 'SUBMITTED', remark: '提交报修：它真长了脚一样在走，救命！' },
+              { time: '2026-06-23 10:15:00', operator: '李掌门', fromStatus: 'SUBMITTED', toStatus: 'ASSIGNED', remark: '审核通过，分派给机修鲁大师。附言：别让它把实验台撞翻了。' },
+              { time: '2026-06-23 11:00:00', operator: '鲁大师', fromStatus: 'ASSIGNED', toStatus: 'IN_PROGRESS', remark: '接单成功，正在赶往现场。准备使用大锤和重启之术。' }
+            ]
+          },
+          {
+            id: 2,
+            orderNo: 'ORD-202606-002',
+            equipmentId: 5,
+            reporterId: 'reporter',
+            faultDescription: '老旧投影仪开机只亮红灯，拍了三次屁股都没有任何用处。',
+            urgency: 'LOW',
+            location: '综合楼 401',
+            contact: '139-9999-9999',
+            status: 'SUBMITTED',
+            assignedTo: null,
+            logs: [
+              { time: '2026-06-23 13:20:00', operator: '小白同学', fromStatus: '', toStatus: 'SUBMITTED', remark: '提交报修：投影仪彻底凉了。' }
+            ]
+          },
+          {
+            id: 3,
+            orderNo: 'ORD-202606-003',
+            equipmentId: 3,
+            reporterId: 'reporter',
+            faultDescription: '示波器屏幕波形抖动狂乱，宛如在夜店蹦迪，无法读取精确数据。',
+            urgency: 'MEDIUM',
+            location: '实验楼 A302',
+            contact: '138-8888-8888',
+            status: 'REPAIRED',
+            assignedTo: 'repairer',
+            logs: [
+              { time: '2026-06-22 14:00:00', operator: '小白同学', fromStatus: '', toStatus: 'SUBMITTED', remark: '屏幕疯了，抖个不停。' },
+              { time: '2026-06-22 15:30:00', operator: '李掌门', fromStatus: 'SUBMITTED', toStatus: 'ASSIGNED', remark: '分配给鲁大师处理。' },
+              { time: '2026-06-22 16:00:00', operator: '鲁大师', fromStatus: 'ASSIGNED', toStatus: 'IN_PROGRESS', remark: '开始排查电磁干扰问题。' },
+              { time: '2026-06-22 17:15:00', operator: '鲁大师', fromStatus: 'IN_PROGRESS', toStatus: 'REPAIRED', remark: '修复完成：把旁边跳蚤市场买的杂牌台灯拔掉就好了。属于低级电磁干扰。' }
+            ]
+          },
+          {
+            id: 4,
+            orderNo: 'ORD-202606-004',
+            equipmentId: 4,
+            reporterId: 'reporter',
+            faultDescription: '恒温培养箱设置 37 度，实际温度只有 8 度。冷得像个电冰箱，细胞全部冬眠。',
+            urgency: 'HIGH',
+            location: '实验楼 B105',
+            contact: '138-8888-8888',
+            status: 'CLOSED',
+            assignedTo: 'repairer',
+            logs: [
+              { time: '2026-06-20 08:30:00', operator: '小白同学', fromStatus: '', toStatus: 'SUBMITTED', remark: '细胞要冻死了，求生！' },
+              { time: '2026-06-20 09:00:00', operator: '李掌门', fromStatus: 'SUBMITTED', toStatus: 'ASSIGNED', remark: '加急分派给鲁大师！' },
+              { time: '2026-06-20 10:00:00', operator: '鲁大师', fromStatus: 'ASSIGNED', toStatus: 'IN_PROGRESS', remark: '正在更换温控板芯片。' },
+              { time: '2026-06-20 11:20:00', operator: '鲁大师', fromStatus: 'IN_PROGRESS', toStatus: 'REPAIRED', remark: '已更换温控保险丝和控制板。重新测试温度已回暖。' },
+              { time: '2026-06-20 14:00:00', operator: '小白同学', fromStatus: 'REPAIRED', toStatus: 'CLOSED', remark: '温度稳定，验收通过！拯救了一批宝贵的菌株！' }
+            ]
+          }
+        ]
+      };
+
+      // 2. Helper Functions
+      function getEquipment(id) {
+        return state.equipment.find(eq => eq.id == id) || { code: 'N/A', name: '未知设备' };
+      }
+
+      function getLab(id) {
+        return state.labs.find(lab => lab.id == id) || { name: '未知实验室' };
+      }
+
+      function getUser(username) {
+        return state.users.find(u => u.username === username) || { realName: username, role: 'USER' };
+      }
+
+      // 3. Navigation Controls
+      function navigateTo(tab) {
+        state.activeTab = tab;
+        render();
+      }
+
+      // 4. Action Handlers
+      function handleLogin(username) {
+        const user = state.users.find(u => u.username === username);
+        if (user) {
+          state.isLoggedIn = true;
+          state.currentUser = user;
+          state.activeTab = 'dashboard';
+          render();
+        }
+      }
+
+      function handleLogout() {
+        state.isLoggedIn = false;
+        state.currentUser = null;
+        render();
+      }
+
+      function handleSelectDemoUser(username) {
+        document.getElementById('loginUsername').value = username;
+        document.getElementById('loginPassword').value = '123456';
+      }
+
+      function submitLoginForm(e) {
+        e.preventDefault();
+        const username = document.getElementById('loginUsername').value;
+        const user = state.users.find(u => u.username === username);
+        if (user) {
+          handleLogin(username);
+        } else {
+          alert('查无此人！请点击上面的角色快速填入账号。');
+        }
+      }
+
+      // 5. Submit Repair Order Action
+      function submitOrderForm(e) {
+        e.preventDefault();
+        const eqId = parseInt(document.getElementById('formEq').value);
+        const desc = document.getElementById('formDesc').value;
+        const urgency = document.getElementById('formUrgency').value;
+        const loc = document.getElementById('formLoc').value;
+        const contact = document.getElementById('formContact').value;
+
+        const orderNo = 'ORD-' + new Date().getFullYear() + String(new Date().getMonth() + 1).padStart(2, '0') + '-' + String(state.orders.length + 1).padStart(3, '0');
+        const newOrder = {
+          id: state.orders.length + 1,
+          orderNo: orderNo,
+          equipmentId: eqId,
+          reporterId: state.currentUser.username,
+          faultDescription: desc,
+          urgency: urgency,
+          location: loc,
+          contact: contact,
+          status: 'SUBMITTED',
+          assignedTo: null,
+          logs: [
+            {
+              time: new Date().toLocaleString(),
+              operator: state.currentUser.realName,
+              fromStatus: '',
+              toStatus: 'SUBMITTED',
+              remark: '提交报修：' + desc
+            }
+          ]
+        };
+
+        // Update equipment status
+        const eq = state.equipment.find(item => item.id === eqId);
+        if (eq) {
+          eq.status = 'REPAIRING';
+        }
+
+        state.orders.unshift(newOrder);
+        alert('上报成功！维修大师鲁大师已被惊醒。');
+        navigateTo('orders');
+      }
+
+      // 6. Submit Add Equipment Action
+      function submitEquipmentForm(e) {
+        e.preventDefault();
+        const code = document.getElementById('eqCode').value;
+        const name = document.getElementById('eqName').value;
+        const category = document.getElementById('eqCategory').value;
+        const labId = parseInt(document.getElementById('eqLab').value);
+        const status = document.getElementById('eqStatus').value;
+
+        const newEq = {
+          id: state.equipment.length + 1,
+          code: code,
+          name: name,
+          category: category,
+          labId: labId,
+          status: status,
+          responsible: state.currentUser.realName
+        };
+
+        state.equipment.push(newEq);
+        alert('设备登记成功！现在它在系统的玄学关照之下了。');
+        navigateTo('equipment');
+      }
+
+      // 7. Workflow Actions in Details popup
+      let selectedOrder = null;
+
+      function showOrderDrawer(orderId) {
+        selectedOrder = state.orders.find(o => o.id === orderId);
+        if (!selectedOrder) return;
+
+        document.getElementById('drawerOrderNo').innerText = selectedOrder.orderNo;
+        const body = document.getElementById('drawerBody');
+        const eq = getEquipment(selectedOrder.equipmentId);
+        const lab = getLab(eq.labId);
+        
+        let actionAreaHTML = '';
+        const role = state.currentUser.role;
+
+        // Admin and Lab Manager can assign repairer
+        if ((role === 'ADMIN' || role === 'LAB_MANAGER') && selectedOrder.status === 'SUBMITTED') {
+          actionAreaHTML = `
+            <div class="panel" style="margin-top:20px; border-color:var(--color-primary);">
+              <h2>实验室主管审核与派单</h2>
+              <form onsubmit="assignOrder(event, ${selectedOrder.id})">
+                <label style="margin-bottom:12px;">
+                  选择指派机修工
+                  <select id="assignRepairer" required>
+                    <option value="repairer">鲁大师 (玄学机修大手子)</option>
+                    <option value="admin">王极权 (客串顶级极权大师)</option>
+                  </select>
+                </label>
+                <label style="margin-bottom:12px;">
+                  派单批示 (幽默留言)
+                  <input type="text" id="assignRemark" value="请机修工速速赶往，多拍拍机器，实在不行重启试试。" required />
+                </label>
+                <div style="display:flex; gap:10px;">
+                  <button type="submit" class="primary-button">批准并派单</button>
+                  <button type="button" class="ghost-button" onclick="rejectOrder(${selectedOrder.id})">退回工单 (不批准)</button>
+                </div>
+              </form>
+            </div>
+          `;
+        } 
+        // Repairer can start repair
+        else if (role === 'REPAIRER' && selectedOrder.status === 'ASSIGNED') {
+          actionAreaHTML = `
+            <div class="panel" style="margin-top:20px;">
+              <h2>特级维修大师操作</h2>
+              <button class="primary-button" onclick="startRepair(${selectedOrder.id})">宣布“开始施法 (进行检修)” 🔧</button>
+            </div>
+          `;
+        } 
+        // Repairer can finish repair
+        else if (role === 'REPAIRER' && selectedOrder.status === 'IN_PROGRESS') {
+          actionAreaHTML = `
+            <div class="panel" style="margin-top:20px;">
+              <h2>维修诊断报告</h2>
+              <form onsubmit="finishRepair(event, ${selectedOrder.id})">
+                <label style="margin-bottom:12px;">
+                  故障根本原因诊断
+                  <input type="text" id="repairReason" placeholder="例如: 网线插错，或者旁边放了台跳蚤市场买的电磁干扰灯" required />
+                </label>
+                <label style="margin-bottom:12px;">
+                  玄学处理方案
+                  <input type="text" id="repairSolution" placeholder="例如: 顺时针拍打了三次，大声念叨了重置密码" required />
+                </label>
+                <button type="submit" class="primary-button">排除故障并申报验收 🚀</button>
+              </form>
+            </div>
+          `;
+        } 
+        // Reporter can accept/close
+        else if (selectedOrder.status === 'REPAIRED') {
+          actionAreaHTML = `
+            <div class="panel" style="margin-top:20px;">
+              <h2>验收人反馈</h2>
+              <p>维修大师鲁大师称已解决该故障，您是否宣布它重获新生？</p>
+              <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="primary-button" onclick="acceptRepair(${selectedOrder.id}, true)">是的，它活了 (验收通过并归档)</button>
+                <button class="ghost-button" style="color:var(--color-danger); border-color:var(--color-danger);" onclick="acceptRepair(${selectedOrder.id}, false)">没活，它还在冒烟 (驳回维修)</button>
+              </div>
+            </div>
+          `;
+        }
+
+        // Timeline html
+        let timelineHTML = selectedOrder.logs.map(log => `
+          <div class="timeline-item">
+            <strong>${log.toStatus ? translateStatus(log.toStatus) : '已退回'}</strong>
+            <span>${log.time} · 操作人: ${log.operator}</span>
+            <p>${log.remark || '无备注'}</p>
+          </div>
+        `).join('');
+
+        body.innerHTML = `
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px;">
+            <div>
+              <p style="margin:4px 0;"><span style="color:var(--color-muted);">故障设备:</span> <strong>${eq.name} (${eq.code})</strong></p>
+              <p style="margin:4px 0;"><span style="color:var(--color-muted);">所属实验室:</span> ${lab.name} (${lab.location})</p>
+              <p style="margin:4px 0;"><span style="color:var(--color-muted);">紧急程度:</span> <span class="status-tag" data-status="${selectedOrder.status}">${translateUrgency(selectedOrder.urgency)}</span></p>
+            </div>
+            <div>
+              <p style="margin:4px 0;"><span style="color:var(--color-muted);">工单状态:</span> <span class="status-tag" data-status="${selectedOrder.status}">${translateStatus(selectedOrder.status)}</span></p>
+              <p style="margin:4px 0;"><span style="color:var(--color-muted);">上报人员:</span> ${getUser(selectedOrder.reporterId).realName}</p>
+              <p style="margin:4px 0;"><span style="color:var(--color-muted);">联系方式:</span> ${selectedOrder.contact}</p>
+            </div>
+          </div>
+          <div class="funny-alert">
+            <strong>故障详细描述</strong>
+            “${selectedOrder.faultDescription}”
+          </div>
+          
+          <h4 style="margin:20px 0 10px; font-family:'Cormorant Garamond', Georgia, serif; font-size:18px; color:var(--color-primary);">工单流转日志时间线</h4>
+          <div class="timeline">
+            ${timelineHTML}
+          </div>
+
+          ${actionAreaHTML}
+        `;
+
+        document.getElementById('detailOverlay').classList.add('active');
+      }
+
+      function hideOrderDrawer() {
+        document.getElementById('detailOverlay').classList.remove('active');
+        selectedOrder = null;
+      }
+
+      function closeOrderDrawer(e) {
+        if (e.target.id === 'detailOverlay') {
+          hideOrderDrawer();
+        }
+      }
+
+      // Workflow transition implementations
+      function assignOrder(e, orderId) {
+        e.preventDefault();
+        const rep = document.getElementById('assignRepairer').value;
+        const remark = document.getElementById('assignRemark').value;
+        const order = state.orders.find(o => o.id === orderId);
+
+        if (order) {
+          order.status = 'ASSIGNED';
+          order.assignedTo = rep;
+          order.logs.push({
+            time: new Date().toLocaleString(),
+            operator: state.currentUser.realName,
+            fromStatus: 'SUBMITTED',
+            toStatus: 'ASSIGNED',
+            remark: '审核同意并指派派单。批注: ' + remark
+          });
+          alert('工单已派发给机修工鲁大师。鲁大师打了个哈欠并接单。');
+          hideOrderDrawer();
+          render();
+        }
+      }
+
+      function rejectOrder(orderId) {
+        const order = state.orders.find(o => o.id === orderId);
+        const remark = prompt('请输入退回工单的理由（逗逗他）：', '信息不足，或者我们不修自己飞走的离心机。');
+        if (remark === null) return;
+
+        if (order) {
+          order.status = 'REJECTED';
+          order.logs.push({
+            time: new Date().toLocaleString(),
+            operator: state.currentUser.realName,
+            fromStatus: 'SUBMITTED',
+            toStatus: 'REJECTED',
+            remark: '拒绝报修并退回。理由: ' + remark
+          });
+          
+          // Restore equipment status
+          const eq = state.equipment.find(item => item.id === order.equipmentId);
+          if (eq) eq.status = 'NORMAL';
+
+          alert('工单已被狠心驳回！报修人眼眶湿润。');
+          hideOrderDrawer();
+          render();
+        }
+      }
+
+      function startRepair(orderId) {
+        const order = state.orders.find(o => o.id === orderId);
+        if (order) {
+          order.status = 'IN_PROGRESS';
+          order.logs.push({
+            time: new Date().toLocaleString(),
+            operator: state.currentUser.realName,
+            fromStatus: 'ASSIGNED',
+            toStatus: 'IN_PROGRESS',
+            remark: '宣布已抵达案发现场，正式对设备开始摆弄施法（物理拍打与线缆检查中）。'
+          });
+          alert('施法开始！请无关人员退避，以防溅一身静电。');
+          hideOrderDrawer();
+          render();
+        }
+      }
+
+      function finishRepair(e, orderId) {
+        e.preventDefault();
+        const reason = document.getElementById('repairReason').value;
+        const solution = document.getElementById('repairSolution').value;
+        const order = state.orders.find(o => o.id === orderId);
+
+        if (order) {
+          order.status = 'REPAIRED';
+          order.logs.push({
+            time: new Date().toLocaleString(),
+            operator: state.currentUser.realName,
+            fromStatus: 'IN_PROGRESS',
+            toStatus: 'REPAIRED',
+            remark: `机修大师宣布故障已排除！排查诊断原因: [${reason}]，玄学解决方案: [${solution}]。`
+          });
+          alert('修复完成！等待原报修人检验它是否还冒烟。');
+          hideOrderDrawer();
+          render();
+        }
+      }
+
+      function acceptRepair(orderId, passed) {
+        const order = state.orders.find(o => o.id === orderId);
+        if (!order) return;
+
+        if (passed) {
+          order.status = 'CLOSED';
+          order.logs.push({
+            time: new Date().toLocaleString(),
+            operator: state.currentUser.realName,
+            fromStatus: 'REPAIRED',
+            toStatus: 'CLOSED',
+            remark: '验收合格！设备顺利康复出院。感谢大师的拍打之恩！'
+          });
+          const eq = state.equipment.find(item => item.id === order.equipmentId);
+          if (eq) eq.status = 'NORMAL';
+          alert('验收通过，工单已被庄严归档。');
+        } else {
+          order.status = 'IN_PROGRESS';
+          order.logs.push({
+            time: new Date().toLocaleString(),
+            operator: state.currentUser.realName,
+            fromStatus: 'REPAIRED',
+            toStatus: 'IN_PROGRESS',
+            remark: '验收失败！报修人反馈说一开机还在嗡嗡响，且味道刺鼻。退回重修。'
+          });
+          alert('验收不通过！工单已打回给鲁大师，鲁大师抱头痛哭。');
+        }
+        hideOrderDrawer();
+        render();
+      }
+
+      // 8. Translation helpers
+      function translateStatus(s) {
+        const dict = {
+          'SUBMITTED': '待审核',
+          'REJECTED': '已退回',
+          'ASSIGNED': '已派单',
+          'IN_PROGRESS': '维修中',
+          'REPAIRED': '待验收',
+          'CLOSED': '已归档',
+          'CANCELLED': '已取消'
+        };
+        return dict[s] || s;
+      }
+
+      // Urgency translation helper
+      function translateUrgency(u) {
+        const dict = {
+          'LOW': '小打小闹 (低)',
+          'MEDIUM': '心惊肉跳 (中)',
+          'HIGH': '要炸了 (加急)'
+        };
+        return dict[u] || u;
+      }
+
+      function translateEqStatus(s) {
+        const dict = {
+          'NORMAL': '精神焕发 (正常)',
+          'REPAIRING': '正在ICU (维修中)',
+          'DISABLED': '寿终正寝 (停用)',
+          'SCRAPPED': '报废'
+        };
+        return dict[s] || s;
+      }
+
+      function funnyAvatarUpload() {
+        alert('🚨 上传失败！\n\n原因：我们的云端固态硬盘目前已被管理员存满机密猫咪图片和斗图表情包，实在没有多余空间给您的头像了。建议继续使用我们精心定制的单字头像！');
+      }
+
+      // 9. Dynamic UI Renderer
+      function render() {
+        const app = document.getElementById('app');
+        
+        // --- CASE 1: NOT LOGGED IN (SHOW HUMOROUS LOGIN VIEW) ---
+        if (!state.isLoggedIn) {
+          app.innerHTML = `
+            <main class="login-page">
+              <section class="login-panel">
+                <div class="login-copy">
+                  <span class="auth-kicker">Lab Disaster Control Center</span>
+                  <strong>救命！设备又双叒叕坏了？</strong>
+                  <p>没关系，深呼吸。无论是示波器开始冒烟，还是恒温培养箱决定孵小鸡，登录这个系统，我们一起用玄学和科学拯救它们！</p>
+                  
+                  <div class="auth-flow" aria-label="玄学报修流程">
+                    <span>
+                      <strong>1. 痛哭上报</strong>
+                      <small>发誓真不是我弄坏的</small>
+                    </span>
+                    <span>
+                      <strong>2. 卑微派单</strong>
+                      <small>管理员大大求求快派人</small>
+                    </span>
+                    <span>
+                      <strong>3. 玄学维修</strong>
+                      <small>懂不懂“拍一拍”的含金量</small>
+                    </span>
+                    <span>
+                      <strong>4. 微笑验收</strong>
+                      <small>谢天谢地它又亮起来了</small>
+                    </span>
+                  </div>
+
+                  <div class="auth-note">
+                    <strong>⚠️ 报修人员温馨提示：</strong><br />
+                    如果设备冒烟，请第一时间切断电源，而不是发朋友圈。如果是软件闪退，请尝试“重启”，这能解决 99% 的玄学问题。
+                  </div>
+                </div>
+
+                <form class="form-card auth-card" onsubmit="submitLoginForm(event)">
+                  <div class="auth-card-header">
+                    <span>SECURE ACCESS</span>
+                    <h1>登录应急大厅</h1>
+                    <p>请认领您的神秘身份（点击一键填入演示账号）：</p>
+                  </div>
+
+                  <div class="auth-roles">
+                    <span onclick="handleSelectDemoUser('admin')">
+                      <strong>系统管理员</strong>
+                      <small>(掌握生杀大权)</small>
+                    </span>
+                    <span onclick="handleSelectDemoUser('manager')">
+                      <strong>实验室掌门</strong>
+                      <small>(日常念叨“轻拿轻放”)</small>
+                    </span>
+                    <span onclick="handleSelectDemoUser('repairer')">
+                      <strong>机修大师</strong>
+                      <small>(拍打技术十级)</small>
+                    </span>
+                    <span onclick="handleSelectDemoUser('reporter')">
+                      <strong>日常报修人</strong>
+                      <small>(“我就摸了一下”)</small>
+                    </span>
+                  </div>
+
+                  <label>
+                    特工代号 (账号)
+                    <input id="loginUsername" placeholder="请输入账号 (如: admin)" required />
+                  </label>
+                  
+                  <label style="margin-top:10px;">
+                    暗号 (密码)
+                    <input id="loginPassword" type="password" placeholder="密码随便输，如: 123456" required />
+                  </label>
+                  
+                  <button class="primary-button" type="submit" style="margin-top:20px; width:100%;">
+                    召唤维修大师 🚀
+                  </button>
+                  <p class="form-link">没有身份？申请加入救机行动组</p>
+                </form>
+              </section>
+            </main>
+          `;
+          return;
+        }
+
+        // --- CASE 2: LOGGED IN (SHOW FULL WORKBENCH INTERFACE) ---
+        const user = state.currentUser;
+        const initial = user.realName.slice(0, 1);
+
+        // Sidebar link HTML generator
+        const sidebarLinks = [
+          { tab: 'dashboard', label: '工作台', icon: '台' },
+          { tab: 'orders', label: '工单列表', icon: '单' }
+        ];
+
+        // Role based access logic
+        if (user.role === 'ADMIN' || user.role === 'REPORTER') {
+          sidebarLinks.push({ tab: 'submit-order', label: '提交报修', icon: '报' });
+        }
+        if (user.role === 'ADMIN' || user.role === 'REPAIRER') {
+          sidebarLinks.push({ tab: 'repair-tasks', label: '维修任务', icon: '修' });
+        }
+        sidebarLinks.push({ tab: 'equipment', label: '设备管理', icon: '设' });
+
+        if (user.role === 'ADMIN' || user.role === 'LAB_MANAGER') {
+          sidebarLinks.push({ tab: 'labs', label: '实验室管理', icon: '室' });
+        }
+        if (user.role === 'ADMIN') {
+          sidebarLinks.push({ tab: 'users', label: '用户管理', icon: '员' });
+        }
+        sidebarLinks.push({ tab: 'profile', label: '个人资料', icon: '我' });
+
+        const sidebarHTML = sidebarLinks.map(link => `
+          <a class="${state.activeTab === link.tab ? 'active' : ''}" onclick="navigateTo('${link.tab}')">
+            <span>${link.icon}</span>
+            <strong>${link.label}</strong>
+          </a>
+        `).join('');
+
+        // Tab Content HTML generator
+        let tabContentHTML = '';
+
+        if (state.activeTab === 'dashboard') {
+          // Calculate stats
+          const activeOrders = state.orders.filter(o => o.status !== 'CLOSED' && o.status !== 'REJECTED');
+          const submittedCount = state.orders.filter(o => o.status === 'SUBMITTED').length;
+          const progressCount = state.orders.filter(o => o.status === 'IN_PROGRESS' || o.status === 'ASSIGNED').length;
+          const repairedCount = state.orders.filter(o => o.status === 'REPAIRED').length;
+          const closedCount = state.orders.filter(o => o.status === 'CLOSED').length;
+
+          tabContentHTML = `
+            <div class="page-header">
+              <div>
+                <h1>工作台</h1>
+                <p>玄学保修与设备拯救总控制中心。当前特工身份: ${user.realName} (${user.role})</p>
+              </div>
+              <div class="row-actions">
+                ${(user.role === 'ADMIN' || user.role === 'REPORTER') ? `<button class="primary-button" onclick="navigateTo('submit-order')">提交故障报修 🚨</button>` : ''}
+                <button class="ghost-button" onclick="alert('报表已打包，但出于防锈考虑拒绝下载')">导出报告</button>
+              </div>
+            </div>
+
+            <section class="dashboard-hero">
+              <div>
+                <span>Emergency Broadcast</span>
+                <h2>设备高维折叠应急大厅</h2>
+                <p>昨日共有 2 台仪器成功渡劫（修复）。管理员发来贺电，并重申：禁止用脚踢示波器底座以图震平噪声。</p>
+                <div class="hero-actions">
+                  <button class="primary-button" onclick="navigateTo('orders')">去瞅瞅全部工单</button>
+                  <button class="ghost-button ghost-on-dark" onclick="navigateTo('equipment')">设备机密档案</button>
+                </div>
+              </div>
+              <div class="hero-metric">
+                <span>金牌设备总数</span>
+                <strong>${state.equipment.length}</strong>
+              </div>
+            </section>
+
+            <section class="card-grid">
+              <section class="data-card" data-tone="blue" onclick="navigateTo('orders')">
+                <span>无人问津 (待审核工单)</span>
+                <strong>${submittedCount}</strong>
+              </section>
+              <section class="data-card" data-tone="amber" onclick="navigateTo('orders')">
+                <span>大师施法中 (维修中工单)</span>
+                <strong>${progressCount}</strong>
+              </section>
+              <section class="data-card" data-tone="teal" onclick="navigateTo('orders')">
+                <span>待家属认领 (待验收工单)</span>
+                <strong>${repairedCount}</strong>
+              </section>
+              <section class="data-card" data-tone="green" onclick="navigateTo('orders')">
+                <span>重回人间 (已归档工单)</span>
+                <strong>${closedCount}</strong>
+              </section>
+            </section>
+
+            <div class="panel">
+              <h2>实验室重大新闻八卦</h2>
+              <div class="funny-alert" style="border-color:var(--color-primary); background:rgba(223, 199, 147, 0.01);">
+                <strong>📢 绝密通告</strong>
+                鲁大师表示：“修机器，我们只做两件事。第一件，换线；第二件，如果换线不好使，就往死里重启。如果还不行，我就要用手拍它了。”
+              </div>
+              <div class="funny-alert" style="border-color:var(--color-danger); background:rgba(234,102,102,0.01);">
+                <strong>📢 违规处分通报</strong>
+                小白同学因在“数字示波器”上粘贴“祖师爷保佑不闪退”神符，阻挡了散热孔导致机器高烧不退，被处以“手写 200 字悔过书并给示波器扇扇子 10 分钟”的处罚。
+              </div>
+            </div>
+          `;
+        } 
+        
+        else if (state.activeTab === 'orders') {
+          // Order list filters and table
+          const listRows = state.orders.map(order => {
+            const eq = getEquipment(order.equipmentId);
+            const reporter = getUser(order.reporterId);
+            const repairerName = order.assignedTo ? getUser(order.assignedTo).realName : '待指派';
+            return `
+              <tr style="cursor:pointer;" onclick="showOrderDrawer(${order.id})">
+                <td><strong>${order.orderNo}</strong></td>
+                <td>${eq.name} <small style="color:var(--color-muted);">(${eq.code})</small></td>
+                <td>${reporter.realName}</td>
+                <td>${order.location}</td>
+                <td><span class="status-tag" data-status="${order.status}">${translateUrgency(order.urgency)}</span></td>
+                <td><strong>${repairerName}</strong></td>
+                <td><span class="status-tag" data-status="${order.status}">${translateStatus(order.status)}</span></td>
+              </tr>
+            `;
+          }).join('');
+
+          tabContentHTML = `
+            <div class="page-header">
+              <div>
+                <h1>全部工单</h1>
+                <p>追踪每一次“机器罢工”到“奇迹康复”的完整流转流程。</p>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="table-toolbar">
+                <div>
+                  <h2>工单档案列表</h2>
+                  <p>点击任何一行查看该工单详细的流转日志和执行玄学操作。</p>
+                </div>
+                <div class="toolbar-actions">
+                  <select id="filterStatusSelect" onchange="filterOrders(this.value)">
+                    <option value="ALL">全部状态的灾难</option>
+                    <option value="SUBMITTED">待审核</option>
+                    <option value="IN_PROGRESS">维修中</option>
+                    <option value="REPAIRED">待验收</option>
+                    <option value="CLOSED">已完美归档</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="table-scroll">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>工单单号</th>
+                      <th>故障设备</th>
+                      <th>报修人</th>
+                      <th>故障地点</th>
+                      <th>紧急程度</th>
+                      <th>负责人</th>
+                      <th>状态</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ordersTableBody">
+                    ${listRows}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `;
+        } 
+        
+        else if (state.activeTab === 'submit-order') {
+          // Equipment options for reporter
+          const eqOptions = state.equipment.filter(eq => eq.status === 'NORMAL').map(eq => `
+            <option value="${eq.id}">${eq.name} (${eq.code}) - ${getLab(eq.labId).name}</option>
+          `).join('');
+
+          tabContentHTML = `
+            <div class="page-header">
+              <div>
+                <h1>故障紧急上报</h1>
+                <p>设备又拉胯了？快填写下方表单，我们将火速指派鲁大师进行物理拍打。</p>
+              </div>
+            </div>
+
+            <div class="panel">
+              <form onsubmit="submitOrderForm(event)" class="form-grid">
+                <label>
+                  指控故障设备
+                  <select id="formEq" required>
+                    ${eqOptions}
+                  </select>
+                </label>
+
+                <label>
+                  故障惨状描述
+                  <textarea id="formDesc" placeholder="请详细阐述其离奇表现，例如：‘开机冒绿光，发出像猪叫一样的杂音’，或者‘拍了一下，屏幕上出现雪花’。" required style="min-height:90px;"></textarea>
+                </label>
+
+                <label>
+                  紧急级别
+                  <select id="formUrgency" required>
+                    <option value="LOW">小打小闹 (低 - 可以慢慢拖)</option>
+                    <option value="MEDIUM">心惊肉跳 (中 - 实验数据要翻车)</option>
+                    <option value="HIGH">要炸了 (高 - 冒烟/漏水/即将物理崩溃)</option>
+                  </select>
+                </label>
+
+                <label>
+                  案发地点 (故障地点)
+                  <input id="formLoc" value="实验楼 A302" required />
+                </label>
+
+                <label>
+                  背锅人联系电话 (联系方式)
+                  <input id="formContact" value="138-8888-8888" required />
+                </label>
+
+                <div class="form-actions" style="margin-top:20px;">
+                  <button type="submit" class="primary-button">宣布上报故障 🚀</button>
+                  <button type="button" class="ghost-button" onclick="navigateTo('dashboard')">放弃上报</button>
+                </div>
+              </form>
+            </div>
+          `;
+        } 
+        
+        else if (state.activeTab === 'repair-tasks') {
+          // Repairer tasks list
+          const repTasks = state.orders.filter(o => o.assignedTo === user.username && o.status !== 'CLOSED');
+          const taskRows = repTasks.map(order => {
+            const eq = getEquipment(order.equipmentId);
+            return `
+              <tr style="cursor:pointer;" onclick="showOrderDrawer(${order.id})">
+                <td><strong>${order.orderNo}</strong></td>
+                <td>${eq.name} <small>(${eq.code})</small></td>
+                <td>${order.location}</td>
+                <td><span class="status-tag" data-status="${order.status}">${translateUrgency(order.urgency)}</span></td>
+                <td><span class="status-tag" data-status="${order.status}">${translateStatus(order.status)}</span></td>
+                <td><button class="primary-button" style="min-height:30px; font-size:11px;">前往处理</button></td>
+              </tr>
+            `;
+          }).join('');
+
+          tabContentHTML = `
+            <div class="page-header">
+              <div>
+                <h1>我的救机任务</h1>
+                <p>今天你拍打机器了吗？以下是分派给您的紧急机修任务，请尽快前往救场。</p>
+              </div>
+            </div>
+
+            <div class="panel">
+              <h2>当前被指派的任务</h2>
+              ${repTasks.length === 0 ? `
+                <div class="table-state">
+                  <p>🎉 暂时没有设备生病！你可以心安理得地去喝杯咖啡了。</p>
+                </div>
+              ` : `
+                <div class="table-scroll">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>工单单号</th>
+                        <th>故障设备</th>
+                        <th>故障地点</th>
+                        <th>紧急程度</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${taskRows}
+                    </tbody>
+                  </table>
+                </div>
+              `}
+            </div>
+          `;
+        } 
+        
+        else if (state.activeTab === 'equipment') {
+          // Equipment lists and registration form
+          const eqRows = state.equipment.map(eq => {
+            const lab = getLab(eq.labId);
+            return `
+              <tr>
+                <td><strong>${eq.code}</strong></td>
+                <td>${eq.name}</td>
+                <td>${eq.category}</td>
+                <td>${lab.name}</td>
+                <td>${eq.responsible}</td>
+                <td><span class="status-tag" data-status="${eq.status}">${translateEqStatus(eq.status)}</span></td>
+              </tr>
+            `;
+          }).join('');
+
+          const labOptions = state.labs.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+
+          tabContentHTML = `
+            <div class="page-header">
+              <div>
+                <h1>实验室设备管理</h1>
+                <p>维护实验室金贵物品的档案目录，让每一次报修都有案可稽。</p>
+              </div>
+            </div>
+
+            ${(user.role === 'ADMIN' || user.role === 'LAB_MANAGER') ? `
+            <div class="panel">
+              <h2>新增机器归档登记</h2>
+              <form onsubmit="submitEquipmentForm(event)" class="form-grid">
+                <label>
+                  设备编号
+                  <input id="eqCode" value="EQ-LAB-${String(state.equipment.length + 1).padStart(3, '0')}" required />
+                </label>
+                <label>
+                  设备名称
+                  <input id="eqName" placeholder="例如: 高精度质谱仪" required />
+                </label>
+                <label>
+                  类别目录
+                  <input id="eqCategory" placeholder="例如: 分析仪器" required />
+                </label>
+                <label>
+                  所属实验室
+                  <select id="eqLab">
+                    ${labOptions}
+                  </select>
+                </label>
+                <label>
+                  出厂初始状态
+                  <select id="eqStatus">
+                    <option value="NORMAL">健康活泼 (正常)</option>
+                    <option value="REPAIRING">需要ICU (维修中)</option>
+                    <option value="DISABLED">躺平退役 (停用)</option>
+                  </select>
+                </label>
+                <div class="form-actions" style="margin-top:20px;">
+                  <button type="submit" class="primary-button">完成档案录入</button>
+                </div>
+              </form>
+            </div>
+            ` : ''}
+
+            <div class="panel">
+              <div class="table-toolbar">
+                <div>
+                  <h2>在库设备资产目录</h2>
+                  <p>显示所有归属于本学院的实验室精密资产目录。</p>
+                </div>
+                <div class="toolbar-actions">
+                  <input type="text" id="eqSearchInput" placeholder="输入名称搜搜看..." onkeyup="searchEquipment(this.value)" />
+                </div>
+              </div>
+              <div class="table-scroll">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>设备编号</th>
+                      <th>设备名称</th>
+                      <th>类别</th>
+                      <th>所属实验室</th>
+                      <th>负责人</th>
+                      <th>状态</th>
+                    </tr>
+                  </thead>
+                  <tbody id="eqTableBody">
+                    ${eqRows}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `;
+        } 
+        
+        else if (state.activeTab === 'labs') {
+          // Lab lists
+          const labRows = state.labs.map(l => `
+            <tr>
+              <td><strong>LAB-${String(l.id).padStart(3, '0')}</strong></td>
+              <td>${l.name}</td>
+              <td>${l.location}</td>
+              <td>${l.description}</td>
+              <td><span class="status-tag" data-status="ACTIVE">运转良好</span></td>
+            </tr>
+          `).join('');
+
+          tabContentHTML = `
+            <div class="page-header">
+              <div>
+                <h1>实验室分区管理</h1>
+                <p>管理教学实验大楼的不同安全分区与负责主管人员。</p>
+              </div>
+            </div>
+
+            <div class="panel">
+              <h2>实验室分区列表</h2>
+              <div class="table-scroll">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>区划代号</th>
+                      <th>实验室名称</th>
+                      <th>具体位置</th>
+                      <th>规划用途/警告描述</th>
+                      <th>状态</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${labRows}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `;
+        } 
+        
+        else if (state.activeTab === 'users') {
+          // Admin User management
+          const userRows = state.users.map(u => `
+            <tr>
+              <td><strong>${u.username}</strong></td>
+              <td>${u.realName}</td>
+              <td><span class="status-tag" data-status="ACTIVE">${u.role}</span></td>
+              <td>${u.desc}</td>
+              <td>
+                <button class="ghost-button" style="min-height:30px; font-size:11px;" onclick="alert('系统管理员已被死锁，修改角色将被封印！')">修改角色</button>
+              </td>
+            </tr>
+          `).join('');
+
+          tabContentHTML = `
+            <div class="page-header">
+              <div>
+                <h1>系统权限管理</h1>
+                <p>掌控整个系统的生杀大权。查看或升降各路神仙的特工权限。</p>
+              </div>
+            </div>
+
+            <div class="panel">
+              <h2>特工小成员名单</h2>
+              <div class="table-scroll">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>账号</th>
+                      <th>真实姓名</th>
+                      <th>拥有权限</th>
+                      <th>身份注脚</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${userRows}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          `;
+        } 
+        
+        else if (state.activeTab === 'profile') {
+          // Profile details with funny upload
+          tabContentHTML = `
+            <div class="page-header">
+              <div>
+                <h1>个人资料</h1>
+                <p>特工身份基本信息卡。泄密概不负责。</p>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="profile-layout">
+                <div class="avatar-block">
+                  <div class="avatar-preview">${initial}</div>
+                  <button type="button" class="upload-button" onclick="funnyAvatarUpload()">
+                    更新机密头像
+                  </button>
+                  <p>支持 PNG/JPG 格式，但实际上无论上传什么都会被拦截，因为服务器在存猫片。</p>
+                </div>
+
+                <div class="profile-form form-grid">
+                  <label>
+                    特工代号
+                    <input value="${user.username}" disabled />
+                  </label>
+                  <label>
+                    真实姓名
+                    <input value="${user.realName}" disabled />
+                  </label>
+                  <label>
+                    所属特工权限组
+                    <input value="${user.role}" disabled />
+                  </label>
+                  <label>
+                    当前心理状态
+                    <input value="状态良好，随时准备拔掉示波器电源" />
+                  </label>
+                  <div class="form-actions" style="margin-top:20px;">
+                    <button class="primary-button" onclick="alert('修改成功！不过其实什么都没变。')">提交修改</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        // Render full dashboard layout
+        app.innerHTML = `
+          <div class="app-shell">
+            <aside class="sidebar">
+              <div class="brand">
+                <div class="brand-mark">LR</div>
+                <div>
+                  <strong>设备玄学报修</strong>
+                  <span>Lab Operations</span>
+                </div>
+              </div>
+
+              <nav class="menu">
+                ${sidebarHTML}
+              </nav>
+
+              <div class="sidebar-status">
+                <span>特工身份权限</span>
+                <strong>${user.role}</strong>
+              </div>
+            </aside>
+
+            <main class="main-area">
+              <header class="topbar">
+                <div class="topbar-title">
+                  <span>实验室设备报修管理系统</span>
+                  <strong>统一运维工作台</strong>
+                </div>
+                <div class="topbar-user">
+                  <div class="user-avatar">${initial}</div>
+                  <div>
+                    <strong>${user.realName}</strong>
+                    <span>${user.role}</span>
+                  </div>
+                  <button class="ghost-button" type="button" onclick="handleLogout()">解脱退出</button>
+                </div>
+              </header>
+
+              <section class="content">
+                ${tabContentHTML}
+              </section>
+            </main>
+          </div>
+        `;
+      }
+
+      // 10. Filter & Search handlers in pure Javascript
+      function filterOrders(status) {
+        const body = document.getElementById('ordersTableBody');
+        const filtered = status === 'ALL' ? state.orders : state.orders.filter(o => o.status === status);
+        
+        body.innerHTML = filtered.map(order => {
+          const eq = getEquipment(order.equipmentId);
+          const reporter = getUser(order.reporterId);
+          const repairerName = order.assignedTo ? getUser(order.assignedTo).realName : '待指派';
+          return `
+            <tr style="cursor:pointer;" onclick="showOrderDrawer(${order.id})">
+              <td><strong>${order.orderNo}</strong></td>
+              <td>${eq.name} <small style="color:var(--color-muted);">(${eq.code})</small></td>
+              <td>${reporter.realName}</td>
+              <td>${order.location}</td>
+              <td><span class="status-tag" data-status="${order.status}">${translateUrgency(order.urgency)}</span></td>
+              <td><strong>${repairerName}</strong></td>
+              <td><span class="status-tag" data-status="${order.status}">${translateStatus(order.status)}</span></td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      function searchEquipment(query) {
+        const body = document.getElementById('eqTableBody');
+        const q = query.toLowerCase();
+        const filtered = state.equipment.filter(eq => 
+          eq.code.toLowerCase().includes(q) || 
+          eq.name.toLowerCase().includes(q) || 
+          eq.category.toLowerCase().includes(q) ||
+          getLab(eq.labId).name.toLowerCase().includes(q)
+        );
+
+        body.innerHTML = filtered.map(eq => {
+          const lab = getLab(eq.labId);
+          return `
+            <tr>
+              <td><strong>${eq.code}</strong></td>
+              <td>${eq.name}</td>
+              <td>${eq.category}</td>
+              <td>${lab.name}</td>
+              <td>${eq.responsible}</td>
+              <td><span class="status-tag" data-status="${eq.status}">${translateEqStatus(eq.status)}</span></td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      // 11. Initial Run
+      render();
+    </script>
+  </body>
+</html>

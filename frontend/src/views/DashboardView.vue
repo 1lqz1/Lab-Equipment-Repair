@@ -27,8 +27,12 @@ onMounted(loadStats)
   <section class="dashboard-hero">
     <div>
       <span>今日工作概览</span>
-      <h2>从报修提交到验收归档，集中掌握设备维修进度</h2>
+      <h2>集中掌握设备维修进度与待处理事项</h2>
       <p>优先处理待审核与维修中工单，减少设备停用时间，保障实验室教学与科研使用。</p>
+      <div class="hero-actions">
+        <RouterLink class="primary-button" to="/orders">查看工单</RouterLink>
+        <RouterLink class="ghost-button ghost-on-dark" to="/equipment">设备档案</RouterLink>
+      </div>
     </div>
     <div class="hero-metric">
       <span>设备总数</span>

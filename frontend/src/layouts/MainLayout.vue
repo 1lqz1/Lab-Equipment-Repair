@@ -22,6 +22,11 @@ const menus = computed(() => {
   return items.filter((item) => item.roles.includes(role))
 })
 
+const userInitial = computed(() => {
+  const name = authStore.user?.realName || authStore.user?.username || 'U'
+  return name.slice(0, 1).toUpperCase()
+})
+
 function logout() {
   authStore.logout()
   router.push('/login')
@@ -35,30 +40,37 @@ function logout() {
         <div class="brand-mark">LR</div>
         <div>
           <strong>设备报修系统</strong>
-          <span>Lab Repair</span>
+          <span>Lab Operations</span>
         </div>
       </div>
 
       <nav class="menu">
         <RouterLink v-for="item in menus" :key="item.path" :to="item.path">
           <span>{{ item.icon }}</span>
-          {{ item.label }}
+          <strong>{{ item.label }}</strong>
         </RouterLink>
       </nav>
 
       <div class="sidebar-status">
-        <span>当前身份</span>
+        <span>当前权限</span>
         <strong>{{ authStore.role || '未登录' }}</strong>
       </div>
     </aside>
 
     <section class="main-area">
       <header class="topbar">
-        <div>
-          <strong>{{ authStore.user?.realName || authStore.user?.username }}</strong>
-          <span>{{ authStore.role }}</span>
+        <div class="topbar-title">
+          <span>实验室设备报修管理系统</span>
+          <strong>统一运维工作台</strong>
         </div>
-        <button class="ghost-button" type="button" @click="logout">退出</button>
+        <div class="topbar-user">
+          <div class="user-avatar">{{ userInitial }}</div>
+          <div>
+            <strong>{{ authStore.user?.realName || authStore.user?.username }}</strong>
+            <span>{{ authStore.role }}</span>
+          </div>
+          <button class="ghost-button" type="button" @click="logout">退出</button>
+        </div>
       </header>
 
       <main class="content">
