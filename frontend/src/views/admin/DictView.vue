@@ -45,7 +45,7 @@ const itemForm = reactive({
   remark: '',
 })
 
-const currentTitle = computed(() => selectedDict.value?.dictName || '请选择字典')
+const currentTitle = computed(() => selectedDict.value?.dictName || '请选择选项分类')
 
 function resetDictForm() {
   editingDictId.value = null
@@ -93,7 +93,7 @@ async function loadDicts() {
       await selectDict(dicts.value[0])
     }
   } catch (exception) {
-    error.value = exception.message || '字典列表加载失败'
+    error.value = exception.message || '选项分类列表加载失败'
   } finally {
     loading.value = false
   }
@@ -117,7 +117,7 @@ async function loadItems() {
     items.value = response.data || []
   } catch (exception) {
     items.value = []
-    error.value = exception.message || '字典项加载失败'
+    error.value = exception.message || '选项加载失败'
   } finally {
     itemLoading.value = false
   }
@@ -137,16 +137,16 @@ async function submitDict() {
   try {
     if (editingDictId.value) {
       await updateDict(editingDictId.value, payload)
-      message.value = '字典已更新'
+      message.value = '选项分类已更新'
     } else {
       await createDict(payload)
-      message.value = '字典已新增'
+      message.value = '选项分类已新增'
     }
     resetDictForm()
     selectedDict.value = null
     await loadDicts()
   } catch (exception) {
-    error.value = exception.message || '字典保存失败'
+    error.value = exception.message || '选项分类保存失败'
   } finally {
     savingDict.value = false
   }
@@ -154,7 +154,7 @@ async function submitDict() {
 
 async function submitItem() {
   if (!selectedDict.value) {
-    error.value = '请先选择字典'
+    error.value = '请先选择选项分类'
     return
   }
   savingItem.value = true
@@ -170,15 +170,15 @@ async function submitItem() {
   try {
     if (editingItemId.value) {
       await updateDictItem(editingItemId.value, payload)
-      message.value = '字典项已更新'
+      message.value = '选项已更新'
     } else {
       await createDictItem(selectedDict.value.id, payload)
-      message.value = '字典项已新增'
+      message.value = '选项已新增'
     }
     resetItemForm()
     await loadItems()
   } catch (exception) {
-    error.value = exception.message || '字典项保存失败'
+    error.value = exception.message || '选项保存失败'
   } finally {
     savingItem.value = false
   }
@@ -189,14 +189,14 @@ async function removeDict(dict) {
   message.value = ''
   try {
     await deleteDict(dict.id)
-    message.value = '字典已删除'
+    message.value = '选项分类已删除'
     if (selectedDict.value?.id === dict.id) {
       selectedDict.value = null
       items.value = []
     }
     await loadDicts()
   } catch (exception) {
-    error.value = exception.message || '字典删除失败'
+    error.value = exception.message || '选项分类删除失败'
   }
 }
 
@@ -205,10 +205,10 @@ async function removeItem(item) {
   message.value = ''
   try {
     await deleteDictItem(item.id)
-    message.value = '字典项已删除'
+    message.value = '选项已删除'
     await loadItems()
   } catch (exception) {
-    error.value = exception.message || '字典项删除失败'
+    error.value = exception.message || '选项删除失败'
   }
 }
 
@@ -216,17 +216,17 @@ onMounted(loadDicts)
 </script>
 
 <template>
-  <PageHeader title="字典管理" description="维护角色、状态、紧急程度、设备分类等基础选项" />
+  <PageHeader title="系统选项管理" description="维护页面下拉框、状态显示和设备分类等基础选项" />
 
   <section class="panel">
-    <h2>{{ editingDictId ? '编辑字典' : '新增字典' }}</h2>
+    <h2>{{ editingDictId ? '编辑选项分类' : '新增选项分类' }}</h2>
     <form class="form-grid" @submit.prevent="submitDict">
       <label>
-        字典编码
+        分类编码
         <input v-model="dictForm.dictCode" required autocomplete="off" placeholder="例如 equipment_category" />
       </label>
       <label>
-        字典名称
+        分类名称
         <input v-model="dictForm.dictName" required autocomplete="off" placeholder="例如 设备分类" />
       </label>
       <label>
@@ -247,7 +247,7 @@ onMounted(loadDicts)
       <div class="form-actions">
         <button class="ghost-button" type="button" @click="resetDictForm">清空</button>
         <button class="primary-button" type="submit" :disabled="savingDict">
-          {{ savingDict ? '保存中...' : editingDictId ? '保存字典' : '新增字典' }}
+          {{ savingDict ? '保存中...' : editingDictId ? '保存分类' : '新增分类' }}
         </button>
       </div>
     </form>
@@ -256,11 +256,11 @@ onMounted(loadDicts)
   <section class="panel">
     <div class="table-toolbar">
       <div>
-        <h2>字典列表</h2>
-        <p>点击字典行可查看和维护字典项。</p>
+        <h2>选项分类列表</h2>
+        <p>点击分类行可查看和维护该分类下的选项。</p>
       </div>
       <div class="toolbar-actions">
-        <input v-model="filters.keyword" placeholder="搜索字典" @keyup.enter="loadDicts" />
+        <input v-model="filters.keyword" placeholder="搜索选项分类" @keyup.enter="loadDicts" />
         <button class="ghost-button" type="button" :disabled="loading" @click="loadDicts">
           {{ loading ? '查询中...' : '查询' }}
         </button>
@@ -287,7 +287,7 @@ onMounted(loadDicts)
             <td>{{ dict.sortOrder }}</td>
             <td>
               <div class="row-actions">
-                <button class="link-button" type="button" @click="selectDict(dict)">字典项</button>
+                <button class="link-button" type="button" @click="selectDict(dict)">选项</button>
                 <button class="link-button" type="button" @click="editDict(dict)">编辑</button>
                 <button class="link-button danger-link" type="button" @click="removeDict(dict)">删除</button>
               </div>
@@ -295,7 +295,7 @@ onMounted(loadDicts)
           </tr>
           <tr v-if="!loading && dicts.length === 0">
             <td colspan="5">
-              <div class="table-state">暂无字典</div>
+              <div class="table-state">暂无选项分类</div>
             </td>
           </tr>
         </tbody>
@@ -304,10 +304,10 @@ onMounted(loadDicts)
   </section>
 
   <section class="panel">
-    <h2>{{ currentTitle }} - 字典项</h2>
+    <h2>{{ currentTitle }} - 选项</h2>
     <form class="form-grid" @submit.prevent="submitItem">
       <label>
-        字典项值
+        选项值
         <input v-model="itemForm.itemValue" required :disabled="!selectedDict" autocomplete="off" />
       </label>
       <label>
@@ -332,7 +332,7 @@ onMounted(loadDicts)
       <div class="form-actions">
         <button class="ghost-button" type="button" @click="resetItemForm">清空</button>
         <button class="primary-button" type="submit" :disabled="savingItem || !selectedDict">
-          {{ savingItem ? '保存中...' : editingItemId ? '保存字典项' : '新增字典项' }}
+          {{ savingItem ? '保存中...' : editingItemId ? '保存选项' : '新增选项' }}
         </button>
       </div>
     </form>
@@ -351,7 +351,7 @@ onMounted(loadDicts)
         <tbody>
           <tr v-if="itemLoading">
             <td colspan="5">
-              <div class="table-state">正在加载字典项...</div>
+              <div class="table-state">正在加载选项...</div>
             </td>
           </tr>
           <template v-else>
@@ -370,7 +370,7 @@ onMounted(loadDicts)
           </template>
           <tr v-if="!itemLoading && selectedDict && items.length === 0">
             <td colspan="5">
-              <div class="table-state">当前字典暂无字典项</div>
+              <div class="table-state">当前分类暂无选项</div>
             </td>
           </tr>
         </tbody>

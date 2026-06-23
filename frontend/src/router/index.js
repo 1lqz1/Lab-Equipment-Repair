@@ -43,7 +43,7 @@ const router = createRouter({
         { path: 'equipment', name: 'equipment', component: EquipmentView },
         { path: 'labs', name: 'labs', component: LabView, meta: { roles: ['ADMIN', 'LAB_MANAGER'] } },
         { path: 'users', name: 'users', component: UserView, meta: { roles: ['ADMIN'] } },
-        { path: 'dicts', name: 'dicts', component: DictView, meta: { roles: ['ADMIN'] } },
+        { path: 'options', name: 'options', component: DictView, alias: 'dicts', meta: { roles: ['ADMIN'] } },
         { path: 'profile', name: 'profile', component: ProfileView },
       ],
     },

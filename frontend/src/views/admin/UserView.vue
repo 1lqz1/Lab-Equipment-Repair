@@ -111,7 +111,7 @@ async function loadBasics() {
     roles.value = roleResponse.data || []
     statuses.value = statusResponse.data || []
   } catch (exception) {
-    listError.value = exception.message || '用户字典加载失败'
+    listError.value = exception.message || '用户选项加载失败'
   }
 }
 
